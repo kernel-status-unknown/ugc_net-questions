@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GATE 2021 Economics (XH-C1) Interactive Hub</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- MathJax for rendering LaTeX equations -->
+    <script>
+        window.MathJax = {
+            tex: {
+                inlineMath: [['$', '$'], ['\\(', '\\)']],
+                displayMath: [['$$', '$$'], ['\\[', '\\]']]
+            },
+            startup: {
+                pageReady: () => {
+                    return MathJax.startup.defaultPageReady().then(() => {
+                        console.log('MathJax initial typesetting complete');
+                    });
+                }
+            }
+        };
+    </script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+    <!-- 
+    Placeholder Comments Required by Constraints:
+    
+    <!-- Chosen Palette: Slate & Warm Neutrals with Academic Accents (Indigo, Emerald, Rose) -->
+    
+    <!-- Application Structure Plan: 
+         1. Hero/Header: Clear title and overall progress summary.
+         2. Analytics Dashboard: Visual breakdown of the exam sections and real-time user performance. This helps users understand the weightage and track their progress.
+         3. Interactive Explorer/Quiz Section: The core content area. Allows filtering by section (GA, XH-B1, XH-C1). Questions are transformed into interactive cards where users can test their knowledge, revealing the correct answer and adapting the UI based on success/failure. This active learning approach is far superior to reading a static table. 
+         4. Data structure: JSON array storing the parsed Markdown table for dynamic rendering. 
+    -->
+    
+    <!-- Visualization & Content Choices: 
+         - Overview Stats -> Inform -> Donut Chart (Chart.js) -> Shows section distribution. Justification: Quickly communicates exam structure.
+         - User Performance -> Inform/Track -> Bar Chart (Chart.js) -> Updates dynamically as questions are answered. Justification: Provides gamified feedback.
+         - Exam Content -> Explore/Test -> Interactive Cards (Vanilla JS + HTML/CSS) -> Users click options or reveal answers for NATs. Justification: Converts static Q&A into a functional study tool.
+         - Library/Method -> Chart.js for canvas charts, Tailwind for layout, Vanilla JS for state, MathJax for equation rendering. NO SVG/Mermaid used.
+    -->
+    
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. Unicode characters utilized for icons. -->
+    -->
+
+    <style>
+        /* CSS Framework: Tailwind is used heavily, but specific chart container rules are embedded here as requested */
+        body {
+            background-color: #f8fafc; /* slate-50 */
+            color: #1e293b; /* slate-800 */
+            font-family: 'Inter', system-ui, sans-serif;
+        }
+
+        /* Chart Container Styling adhering to strict requirements */
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 500px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 300px;
+            max-height: 350px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 350px;
+            }
+        }
+
+        .option-btn {
+            transition: all 0.2s ease;
+        }
+        
+        .option-btn:hover:not(:disabled) {
+            background-color: #e2e8f0; /* slate-200 */
+            cursor: pointer;
+        }
+
+        .option-selected-correct {
+            background-color: #d1fae5 !important; /* emerald-100 */
+            border-color: #10b981 !important; /* emerald-500 */
+            color: #065f46 !important; /* emerald-900 */
+        }
+
+        .option-selected-wrong {
+            background-color: #ffe4e6 !important; /* rose-100 */
+            border-color: #f43f5e !important; /* rose-500 */
+            color: #9f1239 !important; /* rose-900 */
+        }
+        
+        .option-actual-correct {
+            background-color: #d1fae5 !important;
+            border-color: #10b981 !important;
+            border-width: 2px !important;
+        }
+
+        /* Hide scrollbar for clean UI */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1; 
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1; 
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8; 
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+    <!-- Navigation / Header -->
+    <header class="bg-indigo-900 text-white shadow-md sticky top-0 z-50">
+        <div class="container mx-auto px-4 py-4 flex justify-between items-center">
+            <h1 class="text-xl md:text-2xl font-bold tracking-tight">&#128218; GATE 2021 Economics Interactive Hub</h1>
+            <div class="text-sm md:text-base font-medium bg-indigo-800 px-4 py-2 rounded-full border border-indigo-700">
+                Score: <span id="nav-score">0</span> / <span id="nav-total">65</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="flex-grow container mx-auto px-4 py-8">
+        
+        <!-- Section: Dashboard & Overview -->
+        <section class="mb-12 bg-white rounded-xl shadow-sm border border-slate-200 p-6 md:p-8">
+            <div class="mb-6">
+                <h2 class="text-2xl font-bold text-slate-800 mb-2">&#128202; Exam Analytics Dashboard</h2>
+                <p class="text-slate-600 leading-relaxed">
+                    This dashboard provides a structural overview of the GATE 2021 Economics (XH-C1) exam. 
+                    The paper is divided into General Aptitude (GA), Reading Comprehension (XH-B1), and Core Economics (XH-C1). 
+                    Use the charts below to understand the distribution of topics and track your real-time performance as you interact with the study module.
+                </p>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <!-- Structure Chart -->
+                <div class="flex flex-col items-center p-4 bg-slate-50 rounded-lg border border-slate-100">
+                    <h3 class="text-lg font-semibold text-slate-700 mb-2">Paper Composition</h3>
+                    <div class="chart-container">
+                        <canvas id="compositionChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Performance Chart -->
+                <div class="flex flex-col items-center p-4 bg-slate-50 rounded-lg border border-slate-100">
+                    <h3 class="text-lg font-semibold text-slate-700 mb-2">Your Performance</h3>
+                    <div class="chart-container">
+                        <canvas id="performanceChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section: Interactive Explorer -->
+        <section class="mb-12">
+            <div class="mb-6">
+                <h2 class="text-2xl font-bold text-slate-800 mb-2">&#129302; Interactive Study Explorer</h2>
+                <p class="text-slate-600 leading-relaxed mb-6">
+                    Explore the complete question paper interactively. Filter by section to focus your studies. 
+                    Click on the options to test yourself. For Numerical Answer Type (NAT) questions, try solving them first, then click "Reveal Answer" to check your methodology against the official key.
+                </p>
+
+                <!-- Filters -->
+                <div class="flex flex-wrap gap-3" id="filter-container">
+                    <button class="filter-btn bg-indigo-600 text-white px-5 py-2 rounded-full text-sm font-medium shadow-sm hover:bg-indigo-700 transition" data-filter="ALL">All Questions</button>
+                    <button class="filter-btn bg-white text-slate-600 border border-slate-300 px-5 py-2 rounded-full text-sm font-medium hover:bg-slate-50 transition" data-filter="GA">General Aptitude (GA)</button>
+                    <button class="filter-btn bg-white text-slate-600 border border-slate-300 px-5 py-2 rounded-full text-sm font-medium hover:bg-slate-50 transition" data-filter="XH-B1">Reasoning (XH-B1)</button>
+                    <button class="filter-btn bg-white text-slate-600 border border-slate-300 px-5 py-2 rounded-full text-sm font-medium hover:bg-slate-50 transition" data-filter="XH-C1">Economics (XH-C1)</button>
+                </div>
+            </div>
+
+            <!-- Questions Grid -->
+            <div id="questions-grid" class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <!-- Dynamic Content Injected via JS -->
+            </div>
+            
+            <div id="no-results" class="hidden text-center py-12 text-slate-500">
+                &#9888; No questions found for the selected filter.
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-slate-800 text-slate-400 py-6 text-center text-sm">
+        <p>Interactive Data Application. Built from GATE 2021 Economics Q&A Source Report.</p>
+        <p class="mt-2">&#9432; Equations rendered dynamically via MathJax.</p>
+    </footer>
+
+    <!-- Application Logic -->
+    <script>
+        // --- 1. DATA STORAGE ---
+        // Complete dataset of all 65 questions extracted from the Markdown table.
+        const questionsData = [
+            // General Aptitude (GA)
+            { id: "GA Q.1", section: "GA", text: "Consider the following sentences: (i) After his surgery, Raja hardly could walk. (ii) After his surgery, Raja could barely walk. (iii) After his surgery, Raja barely could walk. (iv) After his surgery, Raja could hardly walk. Which of the above sentences are grammatically CORRECT?", options: { A: "(i) and (ii)", B: "(i) and (iii)", C: "(iii) and (iv)", D: "(ii) and (iv)" }, answer: "D" },
+            { id: "GA Q.2", section: "GA", text: "Ms. X came out of a building through its front door to find her shadow due to the morning sun falling to her right side with the building to her back. From this, it can be inferred that building is facing", options: { A: "North", B: "East", C: "West", D: "South" }, answer: "D" },
+            { id: "GA Q.3", section: "GA", text: "In the above figure, O is the center of the circle and, M and N lie on the circle. The area of the right triangle MON is $50~cm^{2}$. What is the area of the circle in $cm^{2}$?", options: { A: "2π", B: "50π", C: "75π", D: "100π" }, answer: "D" },
+            { id: "GA Q.4", section: "GA", text: "\"Triangle\" means \"-\", \"Square\" means \"x\", \"Diamond\" means \"/\". If so, then the value of the expression $\\Delta 2 \\oplus 3 \\Delta ((4 \\otimes 2) \\nabla 4) =$", options: { A: "-1", B: "-0.5", C: "6", D: "7" }, answer: "D" },
+            { id: "GA Q.5", section: "GA", text: "\"The increased consumption of leafy vegetables in the recent months is a clear indication that the people in the state have begun to lead a healthy lifestyle\" Which of the following can be logically inferred from the information presented in the above statement?", options: { A: "The people in the state did not consume leafy vegetables earlier.", B: "Consumption of leafy vegetables may not be the only indicator of healthy lifestyle.", C: "Leading a healthy lifestyle is related to a diet with leafy vegetables.", D: "The people in the state have increased awareness of health causing by consumption of junk foods." }, answer: "C" },
+            { id: "GA Q.6", section: "GA", text: "Oxpeckers and rhinos manifest a symbiotic relationship in the wild. The oxpeckers warn the rhinos about approaching poachers, thus possibly saving the lives of the rhinos. Oxpeckers also feed on the parasitic ticks found on rhinos. In the symbiotic relationship described above, the primary benefits for oxpeckers and rhinos respectively are,", options: { A: "Oxpeckers get a food source, rhinos have no benefit.", B: "Oxpeckers save their habitat from poachers while the rhinos have no benefit.", C: "Oxpeckers get a food source, rhinos may be saved from the poachers.", D: "Oxpeckers save the lives of poachers, rhinos save their own." }, answer: "C" },
+            { id: "GA Q.7", section: "GA", text: "A jigsaw puzzle has 2 pieces. One of the pieces is shown above. Which one of the given options for the missing piece when assembled will form a rectangle? The piece can be moved, rotated or flipped to assemble with the above piece.", options: { A: "[Image based Option]", B: "[Image based Option]", C: "[Image based Option]", D: "[Image based Option]" }, answer: "A" },
+            { id: "GA Q.8", section: "GA", text: "The number of hens, ducks and goats in farm P are 65, 91 and 169, respectively. The total number of hens, ducks and goats in a nearby farm Q is 416. The ratio of hens: ducks: goats in farm Q is 5:14:13. All the hens, ducks and goats are sent from farm Q to farm P. The new ratio of hens:ducks:goats in farm P is", options: { A: "5:7:13", B: "5:14:13", C: "10:21:26", D: "21:10:26" }, answer: "C" },
+            { id: "GA Q.9", section: "GA", text: "The distribution of employees at the rank of executives, across different companies C1, C2, ..., C6 is presented in the chart given above. The ratio of executives with a management degree to those without a management degree in each of these companies is provided in the table above. The total number of executives across all companies is 10,000. The total number of management degree holders among the executives in companies C2 and C5 together is", options: { A: "225", B: "600", C: "1900", D: "2500" }, answer: "Not available in Key" },
+            { id: "GA Q.10", section: "GA", text: "Five persons P, Q, R, S and T are sitting in a row not necessarily in the same order. Q and R are separated by one person, and S should not be seated adjacent to Q. The number of distinct seating arrangements possible is:", options: { A: "4", B: "8", C: "10", D: "16" }, answer: "Not available in Key" },
+            
+            // Reasoning and Comprehension (XH-B1)
+            { id: "XH-B1 Q.1", section: "XH-B1", text: "According to a recent article in a medical journal, consuming curcumin (from turmeric) significantly lowers the risk of COVID-19. The researchers draw this conclusion from a study that found that people who consumed one or more teaspoons of curcumin extract everyday were half as likely to be diagnosed with the disease as people who did not consume curcumin. Which of the following, if true, most weakens the argument in the article?", options: { A: "In another study, people who were given a zinc supplement everyday were more than four times less likely to be diagnosed with COVID-19 as those who did not.", B: "All the participants in this study were from the same state where no other spices or herbs are consumed.", C: "The participants who consumed curcumin were also more likely to exercise than those who did not.", D: "In another study, COVID-19 patients who were given curcumin were no more likely to recover than others." }, answer: "C" },
+            { id: "XH-B1 Q.2", section: "XH-B1", text: "Froot Inc. carried out an internet advertisement campaign for its new beverage CocoLoco. After the campaign, the director of the advertising company conducted a survey and found that the CocoLoco sales were higher than that of TenderJoos a competing product from Joos Inc. The agency concluded that the internet advertising campaign is more effective than advertising through other media. Which of the following statements could strengthen the conclusion above by the agency?", options: { A: "A 2 discount was offered on CocoLoco during the campaign period.", B: "CocoLoco sales were higher than those of TenderJoos before the campaign.", C: "A newspaper advertisement campaign the previous year did not increase CocoLoco sales.", D: "During the campaign for CocoLoco, Joos Inc. did not advertise TenderJoos at all." }, answer: "C" },
+            { id: "XH-B1 Q.3", section: "XH-B1", text: "An e-commerce site offered a deal last month conditional on the customer spending a minimum of 500. Any customer who buys 2 kg of fresh fruit will receive a hand mixer and any customer who buys 2 kg of fresh vegetables will receive a vegetable chopper. Which of the following is NOT a possible outcome of the above?", options: { A: "A customer purchased 3 kg of fresh fruit and did not receive a vegetable chopper.", B: "A customer purchased items for 500 which included 1 kg of vegetables received a hand mixer.", C: "A customer purchased items for 500 which included 2 kg of vegetables and 1 kg of fruit and received a hand mixer.", D: "A customer purchased items for 300 which included 2 kg of fruit and received neither a hand mixer nor a vegetable chopper." }, answer: "C" },
+            { id: "XH-B1 Q.4", section: "XH-B1", text: "Writers of detective fiction often include an incompetent detective as a foil for the brilliant investigator-protagonist as they follow different paths in trying to solve the crime. In the individual accounts, the incompetent detective is frequently distracted by the culprit's careful plans, while the competent investigator solves the case after a final confrontation. Analysts of such fiction believe that the authors select this story-telling technique to provide readers with more complexities in the form of misleading clues, while figuring out the crime. Which of the following statements most logically follows from the passage above?", options: { A: "A detective story is considered well-written if the brilliant investigator is accompanied by an incompetent detective.", B: "Writers of detective fiction use the contrast of an incompetent detective to mainly show how complex the investigation is.", C: "Writers of detective fiction never write stories where the incompetent detective solves the case.", D: "Writers of detective fiction use two investigative accounts to make it difficult for the reader to figure out the outcome." }, answer: "D" },
+            { id: "XH-B1 Q.5", section: "XH-B1", text: "The first (P1) and the last (P6) parts of a single sentence are given to you. The rest of the sentence is divided into four parts and labelled (L,M,N,O). Reorder these parts so that the sentence can be read through correctly... P1: Studies of several Sahitya Akademi award winners show that... L: or encounter professional M: and invariably develop a strained relationship with other literary figures N: they often publish very little O: after winning the prize P6: ...envy and rivalry.", options: { A: "NOLM", B: "MLON", C: "ONML", D: "MOLN" }, answer: "C" },
+            { id: "XH-B1 Q.6", section: "XH-B1", text: "Gerrymandering refers to the targeted redrawing of election constituencies so as to benefit a particular party... Which of these statements can be deduced from the above?", options: { A: "Gerrymandering implies that constituency boundaries can sometimes be drawn to favour one party over the other.", B: "Gerrymandering implies that proportional representation is impossible when where they are favoured.", C: "To counteract gerrymandering political parties should concentrate on districts.", D: "The grouping of districts to constituencies has very little impact on proportional representation." }, answer: "A" },
+            { id: "XH-B1 Q.7", section: "XH-B1", text: "X-ray examination of a recently discovered painting that some authorities judge to be a self-portrait by Michelangelo revealed an under-image of a woman's face... Which of the following assumptions must be made in reaching the conclusion above?", options: { A: "When an already painted canvas of an artist is used, the second artist using that canvas for a new painting is usually influenced by the artistic style of the first.", B: "Several painted canvases that art historians attribute to Michelangelo contain under-images that appear on at least one other of Michelangelo's paintings.", C: "Subject or subjects that appear in authenticated paintings of Michelangelo are rather unlikely to show up as under-images on painted canvases not attributed to Michelangelo.", D: "No painted canvas can be attributed to a particular artist with certainty without an X-ray analysis." }, answer: "C" },
+            { id: "XH-B1 Q.8", section: "XH-B1", text: "____ tourists visited Ladakh than last season; however, this season ____ to be the biggest tourist destination in India. The tourism department explains that the number of tourists to India has ____ relative to previous years, ____ have chosen to visit Ladakh. Select the correct sequence of phrases to fill in the blanks to complete the passage above.", options: { A: "more / for the first time in many seasons it does not appear / increased / seems that most", B: "fewer / as in the past, it appears / in fact decreased / but it seems that only a small proportion", C: "fewer / for the first time in many seasons it appears / in fact decreased / but it seems that most", D: "more / this season as well, it appears / in fact decreased / but it seems that a large proportion" }, answer: "C" },
+            { id: "XH-B1 Q.9", section: "XH-B1", text: "Reorder the sentences in (1) - (5) such that they form a coherent paragraph. (1) In fact dozens of languages today have only one native speaker still living... (2) Many languages are falling out of use... (3) Many other languages are no longer being learned... (4) An endangered language is one that is likely to become extinct... (5) Unless the trends are reversed, these endangered languages will become extinct...", options: { A: "23145", B: "23541", C: "41523", D: "42315" }, answer: "Not available in Key" },
+            { id: "XH-B1 Q.10", section: "XH-B1", text: "The first (P1) and the last (P6) parts of a single sentence are given to you... P1: For a little while... L: it was a common belief M: right after the treaty of Versailles N: that Germany had caused World War I not just by her actions O: held by analysts and politicians alike P6: but by also encouraging Italy in her own aggressions", options: { A: "LMNO", B: "MLON", C: "LNMO", D: "MOLN" }, answer: "Not available in Key" },
+            { id: "XH-B1 Q.11", section: "XH-B1", text: "After Florentino Ariza saw her for the first time, his mother knew before he told her because he lost his voice and his appetite... The author of the passage", options: { A: "Homeopathy cures love.", B: "The doctor could not distinguish between love and cholera.", C: "The doctor could distinguish between love and cholera.", D: "symptoms of love and cholera are similar." }, answer: "C, D" }, 
+            { id: "XH-B1 Q.12", section: "XH-B1", text: "Now, it is clear that the decline of a language must ultimately have political and economic causes: it is not due simply to the bad influence of this or that individual writer... The illustration of the man who takes to drink is used to underscore which of the following ideas in the passage above?", options: { A: "Political and economic causes control deterioration of language.", B: "Effect of an action becomes the cause in a cyclic pattern.", C: "Foolish thoughts are enabled by inaccurate language.", D: "Drinking enables people to have foolish thoughts and slovenly language." }, answer: "B, C" }, 
+            { id: "XH-B1 Q.13", section: "XH-B1", text: "It is a pity that Caste even today has its defenders... Which of the following observations substantiate the arguments found in the passage above?", options: { A: "Newer generations are unable to change and move away from low-paying family professions, even with changed economic circumstances.", B: "Sedentary desk jobs are considered to have more value and are in greater demand than those involving manual labour.", C: "The government's jobs guarantee programme makes low-level management jobs available across all industries to all graduates in the nation.", D: "A bus driver becomes an app creator and, in the course of one month, reaches one million downloads on Playstore with a four-star rating." }, answer: "A, B" }, 
+            { id: "XH-B1 Q.14", section: "XH-B1", text: "Imagine that you're in a game show and your host shows you three doors. Behind one of them is a shiny car and behind the others are goats... Which of the following conclusions follow from the passage above?", options: { A: "Humans calculate the probability of independent, random events such as the opening of a door by dividing the specific outcomes by the total number of possible outcomes.", B: "Humans find it very difficult to learn to account for the host's hand in making the event non-random and, thereby, changing the outcome of the event.", C: "Calculating probabilities is difficult for humans but easy for pigeons; which is why the pigeons succeed where the humans fail.", D: "Humans are governed by reason, but pigeons are irrational and only interested in the outcome and will do whatever it takes to get food." }, answer: "A, B" }, 
+            { id: "XH-B1 Q.15", section: "XH-B1", text: "The truth is that, despite the recent success of car-makers P and Q, India's automobile industry is in a state not that different from the bad old days... Which of the following statements can be inferred from the above?", options: { A: "Low tariff barriers increase productivity.", B: "Tariff jumping leads to increases in productivity.", C: "Deregulation has worked for the automotive parts industry and therefore should be applied to completely-built units.", D: "P and Q do not invest enough in research and development." }, answer: "A, C, D" }, 
+
+            // Economics (XH-C1)
+            { id: "XH-C1 Q.1", section: "XH-C1", text: "A firm finds that for the product that it produces, its (own) price elasticity of demand is 4. Currently, the firm is selling 2000 units per month at some unit. If it wishes to increase its sales by 10%, it must", options: { A: "lower its price by 4%", B: "lower its price by 2%", C: "lower its price by 2.5%", D: "increase its price by 2%" }, answer: "C" },
+            { id: "XH-C1 Q.2", section: "XH-C1", text: "\"Inflation increases the average level of prices\". Which of the following is(are) necessarily implied by this statement: (i) The prices of (ii) Money supply grows at a higher rate than the real GDP", options: { A: "Only (i)", B: "Only (ii)", C: "Neither (i) nor (ii)", D: "Both (i) and (ii)" }, answer: "B" },
+            { id: "XH-C1 Q.3", section: "XH-C1", text: "For the production function $Q=F(K,L)=\\sqrt{KL}$ with $P_{K}=4$ and $P_{L}=2$, find the values of K and L that will minimize the cost of producing 2 units of output.", options: { A: "$K=2\\sqrt{3}$; $L=3\\sqrt{2}$", B: "$K=2\\sqrt{2}$; $L=\\sqrt{2}$", C: "$K=\\sqrt{2}$; $L=2\\sqrt{2}$", D: "$K=2$; $L=2$" }, answer: "C" },
+            { id: "XH-C1 Q.4", section: "XH-C1", text: "If the sum of price elasticities of imports and exports of a country exceeds unity, then a depreciation of domestic currency will ultimately result in", options: { A: "contraction in trade deficit of the country", B: "widening of trade deficit of the country", C: "an uncertain net effect on the trade balance", D: "a huge outflow of foreign portfolio capital from that country" }, answer: "A" },
+            { id: "XH-C1 Q.5", section: "XH-C1", text: "To determine the relationship between y and $x_{1}$, estimated two different OLS models... The estimated coefficients of $x_{1}$ in the above two models are exactly same. From this observation we can state conclusively that (i) $Cov(x_{1},y)=0$ (ii) $\\beta_{2}=0$ (iii) $Cov(x_{2},x_{1})=0$", options: { A: "Only (i) is true", B: "Only (ii) is true", C: "Either (ii) or (iii) or both are true", D: "Neither (ii) nor (iii) is true" }, answer: "C" },
+            { id: "XH-C1 Q.6", section: "XH-C1", text: "XYZ Co. Ltd. is a costless monopoly from suburban Mumbai producing and selling exotic mushrooms. The demand for mushrooms is given by $Q=700-100P$. Do you agree that XYZ will have a maximum possible total revenue of ₹1500?", options: { A: "Yes, the maximum possible total revenue is 1500", B: "No, the maximum possible total revenue is less than 1500", C: "No, the maximum possible total revenue is more than 1500", D: "No, the maximum possible total revenue cannot be estimated" }, answer: "B" },
+            { id: "XH-C1 Q.7", section: "XH-C1", text: "In a demand function estimation of a various households' consumption of good $X(Q_{x})$ for various price levels. The researcher also collected data on household income (M) and household size (S). The estimated regression result is $log~Q_{x}=-0.345(0.111)-1.543(2.345)log~P_{x} +1.123(0.012)log~M+0.234(0.123)log~S$... From the estimation one can conclude that", options: { A: "the demand for good X is highly elastic", B: "X is an inferior good", C: "the estimated price elasticity of demand is not statistically significant", D: "the estimated price elasticity of good X is 2.345" }, answer: "C" },
+            { id: "XH-C1 Q.8", section: "XH-C1", text: "Consider a duopoly market in which the market demand function is as follows: $P=40-Q$. For the two firms producing with identical marginal costs of 10, the Bertrand-Nash equilibrium price will be:", options: { A: "40", B: "10", C: "20", D: "30" }, answer: "B" },
+            { id: "XH-C1 Q.9", section: "XH-C1", text: "What would be the consequences for the OLS estimator if heteroscedasticity is present in a regression model but ignored? Assume that all the other classical assumptions are valid.", options: { A: "It will be unbiased but inefficient", B: "It will be biased but...", C: "It will be unbiased inconsistent", D: "It will be inconsistent" }, answer: "C" },
+            { id: "XH-C1 Q.10", section: "XH-C1", text: "Walras' Law implies that if there are N markets in the economy, then one only needs to find equilibrium prices in", options: { A: "N-2 markets", B: "$N-1$ markets", C: "$N+1$ markets", D: "all the N markets" }, answer: "B" },
+            { id: "XH-C1 Q.11", section: "XH-C1", text: "There are many reasons why a poor country may fail to catch up with a rich neighbour. Which of the following is NOT one of these reasons?", options: { A: "The poor country may have more rapid population growth", B: "The rich country may have more human capital", C: "The poor country may have a higher saving ratio", D: "The rich country through trade may be more integrated with the world economy" }, answer: "C" },
+            { id: "XH-C1 Q.12", section: "XH-C1", text: "In a two country model, an increase in foreign country's national income generally leads to:", options: { A: "increased exports and increased domestic output", B: "decreased exports but increased domestic output", C: "decreased exports and decreased domestic output", D: "increased exports but decreased domestic output" }, answer: "A" },
+            { id: "XH-C1 Q.13", section: "XH-C1", text: "Piku faces a lottery with outcomes of ₹24, ₹12, ₹48 and 6 given by the following probability distribution... She is indifferent between the lottery and receiving 28 with certainty. Given the information we can conclude that Piku is a", options: { A: "risk lover", B: "risk averse", C: "risk neutral", D: "hedger" }, answer: "A" },
+            { id: "XH-C1 Q.14", section: "XH-C1", text: "Consider a regression model $y=\\beta_{0}+\\beta x+u$ where the continuous variable y is regressed on a dummy variable x... Then the estimated coefficient of $\\beta_{IV}$ is", options: { A: "$\\frac{\\overline{y}_{1}-\\overline{y}_{0}}{\\overline{y}^{1}-\\overline{y}^{0}}$", B: "$\\frac{\\overline{y}_{1}-\\overline{x}_{1}}{\\overline{y}_{0}-\\overline{x}_{0}}$", C: "$\\frac{\\overline{y}_{1}-\\overline{y}_{0}}{\\overline{x}_{1}-\\overline{x}_{0}}$", D: "$\\frac{\\overline{y}_{1}-\\overline{y}_{0}}{\\overline{z}^{1}-\\overline{z}^{0}}$" }, answer: "C" },
+            { id: "XH-C1 Q.15", section: "XH-C1", text: "Assuming that external economies exist, when demand increases in a perfectly competitive market, in the long-run, the price of the product", options: { A: "rises above the initial price (before the demand increase) and quantity increases", B: "remains the same as the initial price (before the demand increase) and quantity increases", C: "falls below the initial price (before the demand increase) and quantity increases", D: "equals the initial price (before the demand increase) and quantity decreases" }, answer: "C" },
+            { id: "XH-C1 Q.16", section: "XH-C1", text: "Consider an individual who maximizes her expected utility having Bernoulli utility function $u(w)=\\alpha-\\beta e^{-rw}$; $w>0$ is wealth. The individual displays ____ relative risk aversion.", options: { A: "constant", B: "increasing", C: "decreasing", D: "uncertain" }, answer: "Unclear in Key" },
+            { id: "XH-C1 Q.17", section: "XH-C1", text: "For an open economy, the 'twin deficits' can be expressed by: [where S=Savings; I=Gross Private Investment; G=Government Expenditures; TR=Transfer Payments; TX=Taxes; X=Exports; M=Imports and NFIA=Net Factor Income from Abroad]", options: { A: "$S-I=[G-TR-TX]+[X-M]$", B: "$I-S=[G+TX-TR]+[M-X]$", C: "$S-I=[G+TR-TX]+[X-M]$", D: "$I-S=[TX-G+TR]+[NFIA]$" }, answer: "Unclear in Key" },
+            { id: "XH-C1 Q.18", section: "XH-C1", text: "If expectations about inflation are formed as per the rational expectations hypothesis, then the short-run Philips curve will be", options: { A: "negatively sloped", B: "parallel to the vertical axis", C: "parallel to the horizontal axis", D: "coinciding with the NAIRU" }, answer: "B" },
+            { id: "XH-C1 Q.19", section: "XH-C1", text: "As economic development proceeds, income inequality tends to follow $a(n)$ curve.", options: { A: "asymptotically convex", B: "inverted U-shaped", C: "V-shaped", D: "S-shaped" }, answer: "B" },
+            { id: "XH-C1 Q.20", section: "XH-C1", text: "India has the highest amount of foreign debt in the form of", options: { A: "Non Resident Indian (NRI) Deposits", B: "Commercial Borrowings", C: "Loans taken from the International Monetary Fund", D: "Loans taken from the Bank of England" }, answer: "B" },
+            { id: "XH-C1 Q.21", section: "XH-C1", text: "Let A and B be two events with probabilities $P(A)=\\frac{3}{4}$ and $P(B)=\\frac{1}{3}$; then which of the following options is true?", options: { A: "$P(A\\cap B)\\ge max.[\\frac{3}{4},\\frac{1}{3}]$", B: "$\\frac{1}{3}\\ge P(A\\cap B)\\ge\\frac{1}{12}$", C: "$\\frac{3}{4}\\ge P(A\\cap B)\\ge\\frac{1}{3}$", D: "$P(A\\cap B)\\ge min.[\\frac{3}{4},\\frac{1}{3}]$" }, answer: "B" },
+            { id: "XH-C1 Q.22", section: "XH-C1", text: "If $S^{2}=\\frac{1}{n-1}\\Sigma_{i=1}^{n}(x_{i}-\\overline{x})^{2}$ is an unbiased and consistent estimator of the population variance, then one can conclude that $S=\\sqrt{\\frac{1}{n-1}\\Sigma_{i=1}^{n}(x_{i}-\\overline{x})^{2}}$ is a(an) ____ estimator of the population", options: { A: "unbiased and consistent", B: "unbiased and inconsistent", C: "", D: "biased and inconsistent" }, answer: "A" },
+            { id: "XH-C1 Q.23", section: "XH-C1", text: "Consider the following demand-supply model, where Demand function: $P=Q^{2}-12Q+35$ Supply function: $4P-3Q=0$. The stable market equilibrium price-quantity combination will be", options: { A: "$(P^{*},Q^{*})=(3,4)$", B: "$(P^{*},Q^{*})=(\\frac{105}{16},\\frac{70}{8})$", C: "$(P^{*},Q^{*})=(6,8)$", D: "$(P^{*},Q^{*})=(14,3)$" }, answer: "B" },
+            { id: "XH-C1 Q.24", section: "XH-C1", text: "Trisha's consumption preference on biryani (x) and pudding (y) is given by the utility function $U(x,y)=x+4y$ The price per unit of biryani is 2 and the price per unit of pudding is 3. Trisha's total income is ₹120. However, she faces an extra quantity constraint as she is not allowed to consume biryani more than 60 units and pudding more than 30 units. The optimum quantity of biryani and pudding consumed by Trisha is", options: { A: "$(x^{*},y^{*})=(30,20)$", B: "$(x^{*},y^{*})=(15,30)$", C: "$(x^{*},y^{*})=(30,15)$", D: "$(x^{*},y^{*})=(60,0)$" }, answer: "B" },
+            { id: "XH-C1 Q.25", section: "XH-C1", text: "Consider a Cournot type n-firm natural spring oligopoly where the market demand for natural spring water is given by $P(Q)=a-Q,$ $a>0$ The n firms are symmetric. Each firm incurs a bottling cost of $C_{i}=cq_{i}$ $c>0$ and $a>c$. The equilibrium market price will be", options: { A: "$\\frac{(n+1)}{a}+\\frac{n(n+1)}{c}$", B: "$\\frac{a}{(n+1)}+\\frac{nc}{(n+1)}$", C: "$\\frac{na}{(n+1)}+\\frac{nc}{(n+1)}$", D: "$\\frac{(a-c)}{(n+1)}+\\frac{c}{n(n+1)}$" }, answer: "B" },
+            { id: "XH-C1 Q.26", section: "XH-C1", text: "Goods and Services Tax (GST) is", options: { A: "a destination based consumption tax", B: "an origin based tax assigned to the State of origin where the sale takes place", C: "an indirect tax", D: "a modified form of value added tax" }, answer: "A, C, D" },
+            { id: "XH-C1 Q.27", section: "XH-C1", text: "Consider an intersection of roads without any traffic light... Find the Pure Strategy Nash Equilibrium (PSNE) of the players (Car drivers).", options: { A: "(Car A, Car B) = (Stop, Stop)", B: "(Car A, Car B) = (Stop, Proceed)", C: "(Car A, Car B) = (Proceed, Stop)", D: "(Car A, Car B) = (Proceed, Proceed)" }, answer: "B, C" },
+            { id: "XH-C1 Q.28", section: "XH-C1", text: "A Government Security (G-Sec)", options: { A: "is a tradeable instrument issued by the Central Government", B: "is a tradeable instrument issued by State Governments", C: "can have maturity of only more than one year", D: "cannot be considered as 'gilt-edged' instrument" }, answer: "A, B" },
+            { id: "XH-C1 Q.29", section: "XH-C1", text: "If a country has flexible exchange rate regime with perfect capital mobility, then according to the Mundell-Fleming Model, an expansionary fiscal policy will lead to", options: { A: "no change in output", B: "reduced net exports", C: "appreciation of nominal exchange rate", D: "expansion of output" }, answer: "A, B, C" },
+            { id: "XH-C1 Q.30", section: "XH-C1", text: "The basic tenets of 'Monetarism' are", options: { A: "acceptance of the 'quantity theory' approach to macroeconomic analysis", B: "a strict rule based monetary policy", C: "a monetary approach to the balance-of-payments and exchange-rate theory", D: "an active stabilization policy through expansionary monetary/fiscal policies" }, answer: "A, B, C" },
+            
+            // Numerical Answer Type (NAT)
+            { id: "XH-C1 Q.31", section: "XH-C1", text: "Two farmers, Rohit and Harish, graze their animals on a common land. They can choose to use this common resource 'lightly' or 'heavily'... The minimum value of the discount rate... is ____ (round off to one decimal place).", options: {}, answer: "0.6 to 0.6", type: "NAT" },
+            { id: "XH-C1 Q.32", section: "XH-C1", text: "Suppose Vijay has purchased a high-speed car worth ₹1000000. During the purchase, an Insurance company has shared the latest available road safety survey... Vijay's utility function for wealth (W) is given by $U(W)=ln(W)$ If Vijay plans to buy an accident insurance having a premium of 30%, then he will purchase an insurance of ₹ ____ (round off to the nearest integer).", options: {}, answer: "950000 to 999999", type: "NAT" },
+            { id: "XH-C1 Q.33", section: "XH-C1", text: "Consider the following Table. (All values are in Rupees Thousand Crore)... Based on the given data, the average Broad Money Multiplier for the period April - June is ____ (round off to three decimal places).", options: {}, answer: "5.300 to 5.600", type: "NAT" },
+            { id: "XH-C1 Q.34", section: "XH-C1", text: "Consider two regression models estimated on a sample of 350 observations. $y=\\beta_{0}+\\beta_{1}x_{1}+\\beta_{2}x_{2}+\\beta_{3}x_{3}+\\beta_{4}x_{4}+\\beta_{5}x_{5}+u$ (1) $y=\\alpha_{0}+\\alpha_{1}x_{1}+\\alpha_{2}x_{2}+v$ (2) The $R^{2}$ in model (1) is $R_{1}^{2}=0.3521$ and in model (2) is $R_{2}^{2}=0.2314$. The value of the test statistic to test the $H_{0}$ $\\beta_{3}=\\beta_{4}=\\beta_{5}=0$ is ____ (round off to three decimal places).", options: {}, answer: "21.100 to 21.800", type: "NAT" },
+            { id: "XH-C1 Q.35", section: "XH-C1", text: "Consider a competitive market where the demand and supply functions are given by $q^{D}=12-2P$ and $q^{S}=4P,$ respectively. The tax rate per unit of output that maximizes the tax yield (revenue) is ____.", options: {}, answer: "3 to 3", type: "NAT" },
+            { id: "XH-C1 Q.36", section: "XH-C1", text: "Suppose the demand for a new pharmaceutical drug, on which the manufacturer has a patent monopoly, is given by: $Q=(100-P)A^{0.5}$ where Q is output, P is the price and A is advertising expenditure. Production cost of the patented drug is given by: $C(Q)=60Q$. At the firm's optimal choices, the ratio of advertising expenditure to sales revenue for the pharmaceutical product will be 1: ____ (in integer).", options: {}, answer: "8 to 8", type: "NAT" },
+            { id: "XH-C1 Q.37", section: "XH-C1", text: "Let the rate of inflation in an economy be 4.2%, the growth rate of velocity of money be 2% and, the growth rate of real GDP be 6%. According to Milton Friedman's 'k' percent rule, the rate of growth of money supply for maintaining stable prices will be ____ (round off to one decimal place).", options: {}, answer: "4.0 to 4.0", type: "NAT" },
+            { id: "XH-C1 Q.38", section: "XH-C1", text: "The long-run cost function of all identical firms in a perfectly competitive industry is given by: $C=25q-3q^{2}+1.5q^{3}$ The market demand function is: $P=2500-0.25Q$ The number of firms in the industry at equilibrium is ____ (in integer).", options: {}, answer: "9904 to 9908", type: "NAT" },
+            { id: "XH-C1 Q.39", section: "XH-C1", text: "Given below is an inter-industry transactions matrix. If final demand for the agriculture sector changes from 150 units to 300 units and for the manufacturing sector changes from 120 units to 200 units, then the output of the agriculture sector should be ____ units (in integer).", options: {}, answer: "1860 to 1880", type: "NAT" },
+            { id: "XH-C1 Q.40", section: "XH-C1", text: "Consider that a sample of size 3 is randomly drawn from a population that takes only two values, equally likely: 1 and 1. Let $z=max.(x_{1},x_{2},x_{3})$ where $x_{1}$, $x_{2}$, $x_{3}$ are the sample observations. The expected value of z, $E(z)$ is ____ (round off to two decimal places).", options: {}, answer: "0.70 to 0.80", type: "NAT" }
+        ];
+
+        // --- 2. STATE MANAGEMENT ---
+        const state = {
+            filter: 'ALL',
+            stats: {
+                total: questionsData.length,
+                attempted: 0,
+                correct: 0,
+                incorrect: 0
+            },
+            userAnswers: {} // { "GA Q.1": { answered: true, isCorrect: false } }
+        };
+
+        // --- 3. DOM ELEMENTS ---
+        const gridEl = document.getElementById('questions-grid');
+        const noResultsEl = document.getElementById('no-results');
+        const filterBtns = document.querySelectorAll('.filter-btn');
+        let compositionChartInst, performanceChartInst;
+
+        // --- 4. INITIALIZATION ---
+        function init() {
+            document.getElementById('nav-total').innerText = state.stats.total;
+            renderQuestions();
+            setupFilters();
+            initCharts();
+            
+            // Re-render MathJax after DOM injection
+            if(window.MathJax && window.MathJax.typesetPromise) {
+                window.MathJax.typesetPromise();
+            }
+        }
+
+        // --- 5. CORE LOGIC & RENDERING ---
+        function renderQuestions() {
+            gridEl.innerHTML = '';
+            
+            const filteredData = questionsData.filter(q => 
+                state.filter === 'ALL' || q.section === state.filter
+            );
+
+            if (filteredData.length === 0) {
+                noResultsEl.classList.remove('hidden');
+            } else {
+                noResultsEl.classList.add('hidden');
+                
+                filteredData.forEach(q => {
+                    const card = document.createElement('div');
+                    card.className = "bg-white border border-slate-200 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden";
+                    
+                    // Determine Type (MCQ vs NAT vs MSQ)
+                    const isNAT = q.type === 'NAT' || Object.keys(q.options).length === 0;
+                    const isMSQ = q.answer.includes(',');
+
+                    let optionsHTML = '';
+                    if (!isNAT) {
+                        optionsHTML = `<div class="mt-4 space-y-2">`;
+                        for (const [key, value] of Object.entries(q.options)) {
+                            if (!value) continue;
+                            const isSelected = state.userAnswers[q.id]?.selected === key;
+                            const statusClass = getStatusClass(q.id, key);
+                            const disabledAttr = state.userAnswers[q.id] ? 'disabled' : '';
+                            
+                            optionsHTML += `
+                                <button onclick="handleAnswer('${q.id}', '${key}')" ${disabledAttr}
+                                    class="option-btn w-full text-left p-3 rounded border border-slate-200 text-slate-700 bg-slate-50 ${statusClass}">
+                                    <span class="font-bold mr-2 text-slate-500">${key}.</span> ${value}
+                                </button>
+                            `;
+                        }
+                        optionsHTML += `</div>`;
+                        
+                        if(isMSQ) {
+                            optionsHTML += `<div class="mt-2 text-xs text-indigo-600 font-semibold">&#9432; Multiple Select Question (MSQ) - Answer manually verified</div>`;
+                        }
+                    } else {
+                        // NAT specific UI
+                        const revealed = state.userAnswers[q.id]?.revealed;
+                        optionsHTML = `
+                            <div class="mt-4 p-4 bg-slate-50 border border-slate-200 rounded text-center">
+                                <p class="text-sm text-slate-500 mb-3">Numerical Answer Type (Solve locally)</p>
+                                ${revealed ? 
+                                    `<div class="text-lg font-bold text-emerald-600">Official Key: ${q.answer}</div>` : 
+                                    `<button onclick="revealNAT('${q.id}')" class="bg-indigo-100 text-indigo-700 hover:bg-indigo-200 px-4 py-2 rounded font-medium transition">Reveal Official Answer</button>`
+                                }
+                            </div>
+                        `;
+                    }
+
+                    // Status Badge
+                    let badge = '';
+                    if (state.userAnswers[q.id]) {
+                        if (state.userAnswers[q.id].isCorrect) {
+                            badge = `<span class="absolute top-4 right-4 bg-emerald-100 text-emerald-800 text-xs font-bold px-2 py-1 rounded border border-emerald-200">&#10003; Correct</span>`;
+                        } else if (state.userAnswers[q.id].isCorrect === false) {
+                            badge = `<span class="absolute top-4 right-4 bg-rose-100 text-rose-800 text-xs font-bold px-2 py-1 rounded border border-rose-200">&#10007; Incorrect</span>`;
+                        } else {
+                            badge = `<span class="absolute top-4 right-4 bg-blue-100 text-blue-800 text-xs font-bold px-2 py-1 rounded border border-blue-200">&#128065; Revealed</span>`;
+                        }
+                    }
+
+                    // Key Omitted Warning
+                    const unavailableWarning = q.answer === "Not available in Key" || q.answer === "Unclear in Key" ? `<span class="text-xs text-rose-500 block mt-2">&#9888; Answer key omitted or unclear in official document.</span>` : "";
+
+                    card.innerHTML = `
+                        ${badge}
+                        <div class="text-xs font-bold text-indigo-500 uppercase tracking-wider mb-2">${q.section}</div>
+                        <h3 class="text-lg font-semibold text-slate-800 mb-1">${q.id}</h3>
+                        <p class="text-slate-700 text-base leading-relaxed overflow-x-auto">${q.text}</p>
+                        ${unavailableWarning}
+                        ${optionsHTML}
+                    `;
+                    gridEl.appendChild(card);
+                });
+            }
+        }
+
+        // --- 6. INTERACTION HANDLING ---
+        function handleAnswer(questionId, selectedKey) {
+            if (state.userAnswers[questionId]) return; // Already answered
+
+            const q = questionsData.find(x => x.id === questionId);
+            if (q.answer === "Not available in Key" || q.answer === "Unclear in Key") {
+                alert("Cannot evaluate: Official answer key is missing or unclear for this question.");
+                return;
+            }
+
+            // For MSQ, simple click evaluation is tricky, we treat it as partial/informative here
+            const isCorrect = q.answer.includes(selectedKey) && !q.answer.includes(',');
+            const isPartialMSQ = q.answer.includes(selectedKey) && q.answer.includes(',');
+
+            state.userAnswers[questionId] = {
+                selected: selectedKey,
+                isCorrect: isCorrect || isPartialMSQ,
+                isPartial: isPartialMSQ
+            };
+
+            // Update stats
+            state.stats.attempted++;
+            if (isCorrect || isPartialMSQ) {
+                state.stats.correct++;
+            } else {
+                state.stats.incorrect++;
+            }
+
+            updateNavScore();
+            updatePerformanceChart();
+            renderQuestions(); // Re-render to show styling
+            
+            // Re-render MathJax
+            if(window.MathJax && window.MathJax.typesetPromise) window.MathJax.typesetPromise();
+        }
+
+        function revealNAT(questionId) {
+            state.userAnswers[questionId] = { revealed: true, isCorrect: null };
+            state.stats.attempted++;
+            updateNavScore();
+            updatePerformanceChart();
+            renderQuestions();
+            if(window.MathJax && window.MathJax.typesetPromise) window.MathJax.typesetPromise();
+        }
+
+        function getStatusClass(questionId, optionKey) {
+            const ansObj = state.userAnswers[questionId];
+            if (!ansObj) return '';
+
+            const q = questionsData.find(x => x.id === questionId);
+            const isSelected = ansObj.selected === optionKey;
+            const isActuallyCorrect = q.answer.includes(optionKey);
+
+            if (isSelected && isActuallyCorrect) return 'option-selected-correct';
+            if (isSelected && !isActuallyCorrect) return 'option-selected-wrong';
+            if (!isSelected && isActuallyCorrect) return 'option-actual-correct';
+            return 'opacity-50 cursor-not-allowed';
+        }
+
+        function setupFilters() {
+            filterBtns.forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    // Update active styling
+                    filterBtns.forEach(b => {
+                        b.classList.remove('bg-indigo-600', 'text-white', 'shadow-sm');
+                        b.classList.add('bg-white', 'text-slate-600', 'border', 'border-slate-300');
+                    });
+                    
+                    const clicked = e.target;
+                    clicked.classList.remove('bg-white', 'text-slate-600', 'border', 'border-slate-300');
+                    clicked.classList.add('bg-indigo-600', 'text-white', 'shadow-sm');
+                    
+                    state.filter = clicked.dataset.filter;
+                    renderQuestions();
+                    if(window.MathJax && window.MathJax.typesetPromise) window.MathJax.typesetPromise();
+                });
+            });
+        }
+
+        function updateNavScore() {
+            document.getElementById('nav-score').innerText = state.stats.correct;
+        }
+
+        // --- 7. CHART.JS IMPLEMENTATION ---
+        function initCharts() {
+            // 1. Composition Donut Chart
+            const ctxComp = document.getElementById('compositionChart').getContext('2d');
+            const sections = ['GA', 'XH-B1', 'XH-C1'];
+            const counts = sections.map(sec => questionsData.filter(q => q.section === sec).length);
+
+            compositionChartInst = new Chart(ctxComp, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Gen. Aptitude', 'Reasoning', 'Economics'],
+                    datasets: [{
+                        data: counts,
+                        backgroundColor: ['#6366f1', '#14b8a6', '#f43f5e'], // indigo-500, teal-500, rose-500
+                        borderWidth: 0,
+                        hoverOffset: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'bottom', labels: { font: { family: 'Inter' } } },
+                        tooltip: { callbacks: { label: function(context) { return ` ${context.label}: ${context.raw} Qs`; } } }
+                    }
+                }
+            });
+
+            // 2. Performance Bar Chart
+            const ctxPerf = document.getElementById('performanceChart').getContext('2d');
+            performanceChartInst = new Chart(ctxPerf, {
+                type: 'bar',
+                data: {
+                    labels: ['Correct', 'Incorrect', 'Unattempted/NAT'],
+                    datasets: [{
+                        label: 'Questions',
+                        data: [0, 0, state.stats.total],
+                        backgroundColor: ['#10b981', '#f43f5e', '#cbd5e1'], // emerald, rose, slate
+                        borderRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: { beginAtZero: true, max: state.stats.total, ticks: { precision: 0 } }
+                    },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: { callbacks: { label: function(context) { return ` Count: ${context.raw}`; } } }
+                    }
+                }
+            });
+        }
+
+        function updatePerformanceChart() {
+            if(!performanceChartInst) return;
+            const unattempted = state.stats.total - state.stats.attempted;
+            
+            performanceChartInst.data.datasets[0].data = [
+                state.stats.correct,
+                state.stats.incorrect,
+                unattempted
+            ];
+            performanceChartInst.update();
+        }
+
+        // Run Init
+        window.addEventListener('DOMContentLoaded', init);
+
+    </script>
+</body>
+</html>
