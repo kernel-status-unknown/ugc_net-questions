@@ -1,0 +1,745 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UGC NET Economics 2025 • Explorer</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- Magical Whimsical Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Quicksand:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Chosen Palette: Deep Magical Purple & Starlight Gold -->
+    <!-- Application Structure Plan: Dashboard and Study Mode structure retained but enveloped in a dark, whimsical fantasy library aesthetic. Real images are mapped to functional areas: bg.png for hero, cauldron.png for data mix, flashcards.png for key concepts, book.png/mcq.png for study mode intro, audiobook.png for focus mode, and dragon.png for score celebration. -->
+    <!-- Visualization & Content Choices: 
+         1. Topic Distribution -> Chart.js Donut with magical vibrant colors.
+         2. Key Concepts -> Restored and highlighted with flashcards.png.
+         3. Question Bank -> Dark mode cards with glowing correct/incorrect states.
+         Library: Chart.js, Tailwind, Vanilla JS. -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+
+    <style>
+        body {
+            font-family: 'Quicksand', sans-serif;
+            background-color: #120b1c; 
+            color: #eaddcf;
+            background-image: radial-gradient(circle at top right, #2a1b3d 0%, transparent 40%),
+                              radial-gradient(circle at bottom left, #1c112e 0%, transparent 40%);
+            background-attachment: fixed;
+        }
+        
+        h1, h2, h3, h4, .magical-text {
+            font-family: 'Cinzel', serif;
+        }
+
+        .mystic-card {
+            background-color: rgba(31, 22, 46, 0.85);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(139, 92, 246, 0.2);
+            border-radius: 1.5rem;
+            box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.5), 0 0 15px 0 rgba(139, 92, 246, 0.1);
+        }
+
+        .gold-border {
+            border-color: rgba(229, 184, 92, 0.4);
+        }
+
+        .text-gold { color: #e5b85c; }
+        .text-neon { color: #8b5cf6; }
+
+        .nav-active {
+            border-bottom: 3px solid #e5b85c;
+            color: #e5b85c !important;
+            text-shadow: 0 0 10px rgba(229, 184, 92, 0.5);
+        }
+
+        /* Floating animations for images */
+        .animate-float {
+            animation: float 6s ease-in-out infinite;
+        }
+        .animate-float-delayed {
+            animation: float 6s ease-in-out 3s infinite;
+        }
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-15px); }
+            100% { transform: translateY(0px); }
+        }
+
+        /* Question Options */
+        .option-card {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            background-color: rgba(45, 33, 63, 0.7);
+            border: 1px solid rgba(139, 92, 246, 0.2);
+        }
+        .option-card:hover:not(.answered) {
+            transform: translateY(-3px) scale(1.01);
+            box-shadow: 0 0 20px rgba(139, 92, 246, 0.3);
+            border-color: #8b5cf6;
+            background-color: rgba(62, 44, 89, 0.8);
+        }
+
+        /* Feedback States */
+        .is-correct {
+            background-color: rgba(16, 54, 34, 0.9) !important;
+            border-color: #10b981 !important;
+            box-shadow: 0 0 15px rgba(16, 185, 129, 0.3) !important;
+        }
+        .is-correct .badge-letter {
+            background-color: #10b981 !important;
+            color: #fff !important;
+            box-shadow: 0 0 10px #10b981;
+        }
+        .is-incorrect {
+            background-color: rgba(69, 18, 18, 0.9) !important;
+            border-color: #ef4444 !important;
+            box-shadow: 0 0 15px rgba(239, 68, 68, 0.3) !important;
+        }
+        .is-incorrect .badge-letter {
+            background-color: #ef4444 !important;
+            color: #fff !important;
+            box-shadow: 0 0 10px #ef4444;
+        }
+        .dimmed {
+            opacity: 0.3;
+            filter: grayscale(80%);
+        }
+
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 500px;
+            margin: 0 auto;
+            height: 40vh;
+            max-height: 350px;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #120b1c;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #3e2d56;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #8b5cf6;
+        }
+    </style>
+</head>
+<body class="antialiased selection:bg-purple-500 selection:text-white">
+
+    <nav class="bg-[#120b1c]/80 backdrop-blur-lg sticky top-0 z-50 border-b border-[#3e2d56]">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-20">
+                <div class="flex items-center">
+                    <span class="text-3xl mr-3 filter drop-shadow-[0_0_8px_rgba(229,184,92,0.8)]">✨</span>
+                    <span class="font-bold text-2xl tracking-widest text-[#eaddcf] magical-text">
+                        Econ<span class="text-gold">Explorer</span>
+                    </span>
+                </div>
+                <div class="flex items-center space-x-8">
+                    <button id="btn-dashboard" class="nav-active text-[#a798ba] hover:text-gold px-2 py-6 text-sm md:text-base font-medium transition-all duration-300">
+                        📊 Dashboard Overview
+                    </button>
+                    <button id="btn-study" class="text-[#a798ba] hover:text-gold px-2 py-6 text-sm md:text-base font-medium transition-all duration-300 border-b-3 border-transparent">
+                        📖 Study Mode (100 Qs)
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
+        
+        <!-- ================= ASTRAL DASHBOARD ================= -->
+        <div id="view-dashboard" class="space-y-10 block animate-[fadeIn_0.5s_ease-in-out]">
+            
+            <!-- Hero Banner -->
+            <div class="mystic-card overflow-hidden relative min-h-[300px] flex items-center gold-border">
+                <img src="bg.png" alt="Magical Library" class="absolute inset-0 w-full h-full object-cover opacity-40 mix-blend-screen">
+                <div class="absolute inset-0 bg-gradient-to-r from-[#120b1c] via-[#120b1c]/80 to-transparent"></div>
+                
+                <div class="relative z-10 p-8 md:p-12 w-full md:w-2/3">
+                    <h1 class="text-4xl md:text-5xl font-bold text-gold mb-4 magical-text tracking-wide drop-shadow-lg">Exam Composition Overview</h1>
+                    <p class="text-[#eaddcf] text-lg md:text-xl leading-relaxed">
+                        Take a look at the breakdown of the June 2025 Economics exam. This dashboard shows the structure of all 100 questions, helping you plan your study sessions before jumping into the interactive question bank.
+                    </p>
+                </div>
+            </div>
+
+            <!-- Stats Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="mystic-card p-6 flex flex-col items-center justify-center text-center relative overflow-hidden group">
+                    <div class="absolute inset-0 bg-gradient-to-t from-purple-900/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                    <span class="text-5xl mb-3 drop-shadow-[0_0_10px_rgba(255,255,255,0.5)]">📜</span>
+                    <h3 class="text-lg text-[#a798ba] uppercase tracking-widest font-bold text-sm">Questions Analyzed</h3>
+                    <p class="text-4xl font-bold text-white mt-2 magical-text">100</p>
+                    <p class="text-sm text-[#8b5cf6] mt-2">Questions (Q.51 - Q.150)</p>
+                </div>
+                
+                <div class="mystic-card p-6 flex flex-col items-center justify-center text-center relative overflow-hidden group gold-border bg-[#2d1b1e]/40">
+                    <img src="cauldron.png" alt="Cauldron" class="w-16 h-16 absolute -right-4 -bottom-4 opacity-30 animate-float-delayed">
+                    <span class="text-5xl mb-3 drop-shadow-[0_0_15px_rgba(229,184,92,0.6)]">🔥</span>
+                    <h3 class="text-lg text-[#a798ba] uppercase tracking-widest font-bold text-sm">Top Subject Area</h3>
+                    <p class="text-2xl font-bold text-gold mt-2 magical-text" id="top-topic">Calculating...</p>
+                    <p class="text-sm text-[#e5b85c] mt-2">Highest weightage</p>
+                </div>
+                
+                <div class="mystic-card p-6 flex flex-col items-center justify-center text-center relative overflow-hidden group">
+                    <div class="absolute inset-0 bg-gradient-to-t from-blue-900/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                    <span class="text-5xl mb-3 drop-shadow-[0_0_10px_rgba(14,165,233,0.5)]">🌌</span>
+                    <h3 class="text-lg text-[#a798ba] uppercase tracking-widest font-bold text-sm">Complexity Level</h3>
+                    <p class="text-2xl font-bold text-[#38bdf8] mt-2 magical-text">Advanced</p>
+                    <p class="text-sm text-[#0ea5e9] mt-2">High theoretical focus</p>
+                </div>
+            </div>
+
+            <!-- Topic Chart -->
+            <div class="mystic-card p-8 md:p-10 flex flex-col lg:flex-row items-center gap-8">
+                <div class="flex-1 w-full text-center lg:text-left">
+                    <h2 class="text-3xl font-bold text-white mb-4 magical-text">Topic Distribution</h2>
+                    <p class="text-[#a798ba] mb-6 max-w-md mx-auto lg:mx-0">Observe how different subjects are weighted in the exam. Notice the focus on macro policy and quantitative questions.</p>
+                    <img src="cauldron.png" alt="Brewing Topics" class="w-40 h-40 mx-auto lg:mx-0 animate-float drop-shadow-[0_0_20px_rgba(139,92,246,0.6)]">
+                </div>
+                <div class="flex-1 w-full chart-container">
+                    <canvas id="topicChart"></canvas>
+                </div>
+            </div>
+            
+            <!-- Key Concepts Tested -->
+            <div class="mystic-card p-8 md:p-10">
+                <div class="flex flex-col md:flex-row items-center gap-8">
+                    <div class="w-full md:w-1/3 flex justify-center">
+                        <img src="flashcards.png" alt="Key Concept Cards" class="w-64 h-auto animate-float-delayed drop-shadow-[0_0_25px_rgba(229,184,92,0.4)]">
+                    </div>
+                    <div class="flex-1">
+                        <h2 class="text-3xl font-bold text-gold mb-6 magical-text">Key Concepts</h2>
+                        <p class="text-[#eaddcf] mb-8 text-lg">The exam heavily assesses foundational models and recent economic surveys. Keep these key concepts at the forefront of your mind.</p>
+                        
+                        <div class="grid grid-cols-2 gap-4">
+                            <div class="p-4 bg-[#1f1430] border border-[#4a3568] rounded-xl flex items-center gap-4 hover:border-gold transition-colors">
+                                <span class="text-3xl">⚔️</span>
+                                <div>
+                                    <span class="block font-bold text-white">Nash Equilibrium</span>
+                                    <span class="text-xs text-[#8b5cf6] uppercase tracking-widest">Game Theory</span>
+                                </div>
+                            </div>
+                            <div class="p-4 bg-[#1f1430] border border-[#4a3568] rounded-xl flex items-center gap-4 hover:border-gold transition-colors">
+                                <span class="text-3xl">⚖️</span>
+                                <div>
+                                    <span class="block font-bold text-white">Coase Theorem</span>
+                                    <span class="text-xs text-[#8b5cf6] uppercase tracking-widest">Externality</span>
+                                </div>
+                            </div>
+                            <div class="p-4 bg-[#1f1430] border border-[#4a3568] rounded-xl flex items-center gap-4 hover:border-gold transition-colors">
+                                <span class="text-3xl">📉</span>
+                                <div>
+                                    <span class="block font-bold text-white">IS-LM Model</span>
+                                    <span class="text-xs text-[#8b5cf6] uppercase tracking-widest">Macro Policy</span>
+                                </div>
+                            </div>
+                            <div class="p-4 bg-[#1f1430] border border-[#4a3568] rounded-xl flex items-center gap-4 hover:border-gold transition-colors">
+                                <span class="text-3xl">🇮🇳</span>
+                                <div>
+                                    <span class="block font-bold text-white">Union Budget</span>
+                                    <span class="text-xs text-[#8b5cf6] uppercase tracking-widest">Indian Econ</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= THE GRAND GRIMOIRE (STUDY MODE) ================= -->
+        <div id="view-study" class="space-y-8 hidden animate-[fadeIn_0.5s_ease-in-out]">
+            
+            <!-- Study Mode Hero -->
+            <div class="mystic-card p-8 md:p-10 gold-border flex flex-col md:flex-row items-center gap-8 relative overflow-hidden">
+                <div class="absolute right-0 top-0 w-64 h-64 bg-purple-900/20 blur-[100px] rounded-full"></div>
+                <div class="absolute left-0 bottom-0 w-64 h-64 bg-yellow-900/10 blur-[100px] rounded-full"></div>
+                
+                <div class="w-full md:w-1/4 flex justify-center z-10">
+                    <img src="book.png" alt="Grand Grimoire" class="w-48 h-auto animate-float drop-shadow-[0_15px_25px_rgba(139,92,246,0.5)]">
+                </div>
+                <div class="flex-1 z-10">
+                    <h1 class="text-3xl md:text-4xl font-bold text-gold mb-4 magical-text">Interactive Question Bank</h1>
+                    <p class="text-[#eaddcf] text-lg leading-relaxed mb-6">
+                        Test your knowledge across all 100 questions. Select an option to check your answer. Correct choices shine in <span class="text-[#10b981] font-bold">emerald green</span>, while incorrect ones highlight in <span class="text-[#ef4444] font-bold">crimson red</span> revealing the right answer.
+                    </p>
+                    
+                    <div class="flex flex-col lg:flex-row items-center gap-4 bg-[#1c112e] p-4 rounded-2xl border border-[#3e2d56]">
+                        <img src="mcq.png" alt="Target" class="w-12 h-12">
+                        <div id="filter-container" class="flex-1 w-full">
+                            <label class="block text-xs font-bold text-[#a798ba] uppercase tracking-widest mb-1">Filter by Subject:</label>
+                            <select id="category-filter" class="w-full p-2.5 rounded-xl border border-[#4a3568] bg-[#2a1b3d] text-white focus:outline-none focus:border-gold focus:ring-1 focus:ring-gold transition-colors cursor-pointer appearance-none">
+                                <option value="All">All 100 Questions</option>
+                                <option value="Microeconomics">Microeconomics</option>
+                                <option value="Macroeconomics">Macroeconomics</option>
+                                <option value="Indian Economy">Indian Economy</option>
+                                <option value="Quantitative">Stats & Econometrics</option>
+                                <option value="Public & Env">Public & Env Economics</option>
+                                <option value="Intl Trade">International Trade</option>
+                            </select>
+                        </div>
+                        <div class="w-full lg:w-auto mt-2 lg:mt-0 pt-2 lg:pt-0 lg:pl-4 border-t lg:border-t-0 lg:border-l border-[#3e2d56]">
+                            <button id="btn-start-test" class="w-full bg-gradient-to-r from-purple-700 to-indigo-700 hover:from-purple-600 hover:to-indigo-600 text-white font-bold py-2.5 px-6 rounded-xl transition-all shadow-[0_0_15px_rgba(139,92,246,0.4)] flex items-center justify-center gap-2">
+                                <span>⏱️</span> Start 10-Q Practice Test
+                            </button>
+                            <button id="btn-exit-test" class="hidden w-full bg-[#3e2d56] hover:bg-[#4a3568] text-white font-bold py-2.5 px-6 rounded-xl transition-all flex items-center justify-center gap-2">
+                                <span>🚪</span> Exit Practice Test
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Focus Mode Active Banner -->
+            <div id="test-progress-banner" class="hidden mystic-card p-6 border-l-4 border-l-purple-500 flex flex-col md:flex-row items-center gap-6 bg-gradient-to-r from-[#1c112e] to-[#2a1b3d]">
+                <img src="audiobook.png" alt="Focus Mode" class="w-32 h-auto animate-float-delayed drop-shadow-[0_0_15px_rgba(139,92,246,0.6)]">
+                <div class="flex-1">
+                    <h2 class="text-2xl font-bold text-[#c4b5fd] magical-text mb-2">Practice Test Started</h2>
+                    <p class="font-medium text-[#eaddcf]">10 random questions have been selected for you. Good luck!</p>
+                </div>
+                <div class="text-center bg-[#120b1c] border border-[#3e2d56] p-4 rounded-2xl min-w-[120px]">
+                    <span class="block text-xs font-bold text-[#8b5cf6] uppercase tracking-widest mb-1">Questions</span>
+                    <span class="text-3xl font-bold text-white"><span id="answered-count">0</span><span class="text-lg text-[#a798ba]">/10</span></span>
+                </div>
+            </div>
+
+            <!-- Score Banner -->
+            <div id="score-banner" class="hidden mystic-card p-8 border-2 border-gold flex flex-col md:flex-row items-center gap-8 bg-gradient-to-br from-[#2a1b3d] to-[#120b1c]">
+                <img src="dragon.png" alt="Victory Dragon" class="w-48 h-auto drop-shadow-[0_0_30px_rgba(229,184,92,0.5)] animate-float">
+                <div class="flex-1 text-center md:text-left">
+                    <h2 class="text-3xl font-bold text-gold magical-text mb-3">Test Complete! 🎉</h2>
+                    <p class="text-lg text-[#eaddcf] mb-6">Great job! Review your answers and continue practicing to improve your score.</p>
+                    <button id="btn-retake-test" class="bg-gold hover:bg-yellow-500 text-[#120b1c] font-bold py-3 px-8 rounded-xl transition-all shadow-[0_0_20px_rgba(229,184,92,0.4)]">
+                        Take Another Test
+                    </button>
+                </div>
+                <div class="text-center bg-[#1c112e] border border-gold/50 p-6 rounded-3xl shadow-inner">
+                    <span class="block text-sm font-bold text-gold uppercase tracking-widest mb-2">Final Score</span>
+                    <span class="text-6xl font-black text-white drop-shadow-[0_0_10px_rgba(255,255,255,0.3)]"><span id="final-score"></span><span class="text-3xl text-[#a798ba]">/10</span></span>
+                </div>
+            </div>
+            
+            <div class="clear-both"></div>
+
+            <div id="questions-container" class="space-y-8">
+                <!-- Questions injected here -->
+            </div>
+        </div>
+
+    </main>
+
+    <script>
+        const appState = {
+            currentView: 'dashboard',
+            currentFilter: 'All',
+            isTestMode: false,
+            testQuestions: [],
+            testScore: 0,
+            testAnswered: 0
+        };
+
+        // Full 100 Question Dataset
+        const questionData = [
+            { id: 51, topic: "Microeconomics", correct: 2, text: "Which of the following statements best define property rights?", options: ["Property rights refer only to government ownership of land and capital.", "Property rights are informal social rules that cannot be enforced by law.", "Property rights are the legally enforced rights to determine how a resource is used, owned and transferred.", "Property rights prevent individuals from profiting from private property."] },
+            { id: 52, topic: "Public & Env", correct: 1, text: "Which of the followings is not true?", options: ["The effect of any tax can be decomposed into an income effect and substitution effect.", "There is a substitution effect associated with a lump-sum tax, but no income effect.", "The greater the substitution effect, the greater is the deadweight loss.", "There is also a deadweight loss associate with the reduction in prices received by producers as a result of imposition of tax."] },
+            { id: 53, topic: "Indian Economy", correct: 2, text: "Arrange the following countries based on the market capitalization to nominal GDP ratio at the end of December 2024 in ascending order: A. U.K., B. India, C. China, D. Brazil, E. Japan.", options: ["B, A, C, E, D", "C, D, B, A, E", "D, C, A, B, E", "A, B, D, C, E"] },
+            { id: 54, topic: "Macroeconomics", correct: 1, text: "Which of the following is not true according to classical's views on public debt?", options: ["Public debt financing requires funds for interest payment and amortization, hence a double burden on tax payers.", "Public debt financing supports compensatory budget policy as a tool for stimulating aggregate demand.", "Public debt creates barren production and consumption and burden is transferred to future generation.", "Public debt destroys capital which otherwise could be used productively."] },
+            { id: 55, topic: "Quantitative", correct: 1, text: "Assume that the rate of investment is described by the function I(t)=12t^(1/3) and capital stock k(0)=25. Find the time path of capital stock k.", options: ["16t^(4/3)+25", "9t^(4/3)+25", "-9t^(4/3)+25", "-16t^(4/3)+25"] },
+            { id: 56, topic: "Public & Env", correct: 2, text: "Which of the followings is true in case of a good i.e., 'Crowded City side Walk'?", options: ["It is non-excludable and non-rivalry in nature.", "It is excludable but non-rivalry in nature.", "It is non-excludable but rivalry in nature.", "It is excludable and rivalry in nature."] },
+            { id: 57, topic: "Macroeconomics", correct: 1, text: "Arrange the following works of J. M. Keynes in chronological order (Starting from the oldest to latest): A. A Treatise on Money, B. General Theory of Employment, Interest and Money, C. Indian Currency and Finance, D. A Monetary Theory of Production, E. A Tract on Monetary Reform.", options: ["E, C, A, D, B", "C, E, A, D, B", "C, E, A, B, D", "A, C, E, B, D"] },
+            { id: 58, topic: "Macroeconomics", correct: 1, text: "Match the concepts with their authors: A. Paradox of thrift, B. Water-Diamond paradox, C. Wage employment paradox, D. Macroeconomic paradox. Authors: I. K. Boulding, II. A.C. Pigou, III. J.M. Keynes, IV. Adam Smith.", options: ["A-II, B-I, C-III, D-IV", "A-I, B-II, C-III, D-IV", "A-III, B-IV, C-II, D-I", "A-III, B-IV, C-I, D-II"] },
+            { id: 59, text: "Lexicographic preference violates which of the following axioms of utility theory?", options: ["Transitivity axiom", "Convexity axiom", "Continuity axiom", "Independence axiom"], topic: "Microeconomics", correct: 2 },
+            { id: 60, text: "Which of the following are correct about the foreign trade policy (FTP) 2023 of India?", options: ["A, D & E Only", "D & E Only", "A, B & C Only", "A, B, C & D Only"], topic: "Indian Economy", correct: 3 },
+            { id: 61, text: "Which of the following is the operating target of monetary policy conducted by RBI?", options: ["Repo Rate", "Reverse Repo Rate", "Weighted Average Call Money Rate", "Marginal Standing Facility Rate"], topic: "Indian Economy", correct: 2 },
+            { id: 62, text: "Match the Game Theory concepts: A. Playing each strategy with prob, B. Max payoff given other...", options: ["A-II, B-III, C-IV, D-I", "A-I, B-IV, C-III, D-II", "A-III, B-II, C-IV, D-I", "A-IV, B-III, C-I, D-II"], topic: "Microeconomics", correct: 3 },
+            { id: 63, text: "Match renewable energy sources with % of total energy production (Nov 2024):", options: ["A-II, B-III, C-IV, D-I", "A-III, B-I, C-IV, D-II", "A-II, B-III, C-I, D-IV", "A-II, B-I, C-III, D-IV"], topic: "Indian Economy", correct: 0 },
+            { id: 64, text: "In the context of classical economics, an increase in money supply results in:", options: ["A shift in aggregate demand curve to the left", "A shift in aggregate demand curve to the right", "A shift in aggregate supply curve to the right", "No change in aggregate price increases"], topic: "Macroeconomics", correct: 1 },
+            { id: 65, text: "If the marginal propensity to consume is 0.8 and initial increase in tax revenues by the government is Rs. 100, then the impact on national income would be:", options: ["National Income will increase by Rs. 100", "National Income will increase by Rs. 500", "National Income will decrease by Rs. 400", "National Income will decrease by Rs. 100"], topic: "Macroeconomics", correct: 2 },
+            { id: 66, text: "Which of the following is likely to lead to a rise in the output cost of disinflation?", options: ["Inflation expectations become more accurate.", "Sluggish response of wages and prices to monetary contraction.", "Gradual policy response.", "Rational expectations."], topic: "Macroeconomics", correct: 1 },
+            { id: 67, text: "Arrange the following Chairman of Finance Commission in order of their appointment starting from the oldest.", options: ["A, C, E, D, B", "C, E, A, D, B", "B, D, E, C, A", "D, C, E, A, B"], topic: "Indian Economy", correct: 3 },
+            { id: 68, text: "In which of the following year, the mandate/preamble of RBI has been amended?", options: ["2019", "2024", "2016", "2007"], topic: "Indian Economy", correct: 2 },
+            { id: 69, text: "Arrange the following environmental conventions/summits in sequence starting from the oldest:", options: ["E, A, C, D, B", "E, C, A, B, D", "C, E, A, D, B", "A, B, C, D, E"], topic: "Public & Env", correct: 2 },
+            { id: 70, text: "Arrange the following rounds in chronological order (starting from oldest):", options: ["D, E, C, B, A", "D, E, B, C, A", "D, B, E, C, A", "D, E, C, A, B"], topic: "Intl Trade", correct: 3 },
+            { id: 71, text: "Which of the following are correct about the revised criteria of MSMEs effective from 01 April 2025 as per union budget 2025-26?", options: ["B, C & D Only", "A, D & E Only", "A, B & E Only", "C, D & E Only"], topic: "Indian Economy", correct: 1 },
+            { id: 72, text: "According to Rostow, any industry can play the role of leading sector in the take-off stage provided following conditions are met:", options: ["B, C, D & E Only", "A, D & E Only", "A, C & D Only", "A, B, C & D Only"], topic: "Macroeconomics", correct: 3 },
+            { id: 73, text: "Integrate ∫(x+3)/(x+5) dx", options: ["x²/2 - 2ln|x+5| + c", "x²/2 + 2ln|x+5| + c", "x + 2ln|x+5| + c", "x - 2ln|x+5| + c"], topic: "Quantitative", correct: 3 },
+            { id: 74, text: "In the context of IS-LM model, a higher marginal propensity to spend results in:", options: ["A flatter aggregate demand curve and consequently a steeper IS curve", "A steeper aggregate demand curve and consequently a flatter IS curve", "Increase in aggregate demand and a rightward shift of the IS curve", "Increase in demand for real balances"], topic: "Macroeconomics", correct: 1 },
+            { id: 75, text: "Match Items of receipts with Share to total receipt % budget 2025-26:", options: ["A-IV, B-II, C-III, D-I", "A-III, B-I, C-II, D-IV", "A-III, B-I, C-IV, D-II", "A-IV, B-II, C-I, D-III"], topic: "Indian Economy", correct: 1 },
+            { id: 76, text: "Arrange the following publications in chronological order starting from the oldest to the latest.", options: ["A, E, B, C, D", "E, B, C, D, A", "C, D, B, E, A", "A, B, E, C, D"], topic: "Macroeconomics", correct: 3 },
+            { id: 77, text: "The Stolper-Samuelson theorem postulates that:", options: ["An increase in relative price raises earnings of factor used intensively.", "An increase in relative price decreases earnings of factor used intensively.", "An increase in relative price raises earnings of factor used scarcely.", "A decrease in relative price raises earnings of factor used intensively."], topic: "Intl Trade", correct: 0 },
+            { id: 78, text: "Which of the followings are true regarding the outcome of a consumer's optimization process:", options: ["A, C & E Only", "A, D & E Only", "A, B & D Only", "A, B, D & E Only"], topic: "Microeconomics", correct: 2 },
+            { id: 79, text: "Given a payoff matrix for Player 1 and 2, which statements are true about the game?", options: ["A, B, C & E Only", "A, D & E Only", "B, C & D Only", "C, D & E Only"], topic: "Microeconomics", correct: 3 },
+            { id: 80, text: "Arrange the following sectors in descending order as per their share in total FDI in India in H1 FY 2025:", options: ["D, E, C, A, B", "D, C, E, B, A", "E, B, A, D, C", "E, D, C, B, A"], topic: "Indian Economy", correct: 0 },
+            { id: 81, text: "Which conditions are required for the set of consumers to exhibit parallel, straight wealth expansion paths at any price vector P?", options: ["A, B & C Only", "A, D & E Only", "B, C & D Only", "A, B & D Only"], topic: "Microeconomics", correct: 1 },
+            { id: 82, text: "If the demand law is: P=√(9-x) and the demand is fixed at x0=5. Find the consumer's surplus.", options: ["31/15", "11/15", "8/15", "17/3"], topic: "Quantitative", correct: 0 },
+            { id: 83, text: "Match Trade Models (Specific factors, Immiserizing, Mercantilism, Secular deterioration) with Authors:", options: ["A-III, B-IV, C-II, D-I", "A-IV, B-III, C-II, D-I", "A-IV, B-II, C-III, D-I", "A-II, B-IV, C-I, D-III"], topic: "Intl Trade", correct: 1 },
+            { id: 84, text: "The idea of constructing poverty-weighted indices of growth is:", options: ["To give at least equal weight to all income groups in society.", "To achieve high growth rate.", "To facilitate foreign trade on equal basis.", "To assign more value or weight on income group of richest population."], topic: "Macroeconomics", correct: 0 },
+            { id: 85, text: "According to classical economics, an increase in government deficit spending leads to:", options: ["A, B & D Only", "A, D & E Only", "A, B, C & D Only", "C, D & E Only"], topic: "Macroeconomics", correct: 1 },
+            { id: 86, text: "According to neoclassical growth theory, an increase in saving rate:", options: ["Raises the growth rate of output in the short run.", "Increases long run growth rate of output.", "Deceases the steady-state capital-labor ratio.", "Decreases the long-run level of capital and output per head."], topic: "Macroeconomics", correct: 0 },
+            { id: 87, text: "Match Demography concepts with Authors:", options: ["A-III, B-IV, C-I, D-II", "A-III, B-IV, C-II, D-I", "A-III, B-II, C-IV, D-I", "A-IV, B-III, C-II, D-I"], topic: "Public & Env", correct: 3 },
+            { id: 88, text: "If Q=f(K,L) is a homogeneous production function of degree one, which of the following satisfies Euler's theorem?", options: ["(∂Q/∂k) + (∂Q/∂L) = Q", "(∂Q/∂K)K + (∂Q/∂L)L = Q", "(∂Q/∂K)K + (∂Q/∂L)L > 1", "(∂Q/∂K) + (∂Q/∂L) = 1"], topic: "Quantitative", correct: 1 },
+            { id: 89, text: "Sales (Mean=40, SD=10). Ad (Mean=6, SD=1.5). r=0.9. Estimate sales for Ad=10.", options: ["Rs. 60 crore", "Rs. 64 crore", "Rs. 70 crore", "Rs. 74 crore"], topic: "Quantitative", correct: 1 },
+            { id: 90, text: "If mean x=32, mean y=38, byx=-0.6643, bxy=-0.2337. Find regression line of y on x.", options: ["y=-0.2337x+40.8806", "y=-0.2337x-40.8806", "y=-0.6643x-59.2576", "y=-0.6643x+59.2576"], topic: "Quantitative", correct: 3 },
+            { id: 91, text: "If both input and output markets are competitive and firms are profit maximizing, then in equilibrium each factor earns:", options: ["An amount equal to the price of output times total output.", "The amount allocated by political process", "An equal share of output.", "The value of its marginal product."], topic: "Microeconomics", correct: 3 },
+            { id: 92, text: "If the value of Keynesian investment multiplier is 4, which one of the following will be the corresponding saving function?", options: ["S=-4+0.4Yd", "S=-10+0.75Yd", "S=-12+0.25Yd", "S=-6+0.35Yd"], topic: "Macroeconomics", correct: 2 },
+            { id: 93, text: "Which of the following game does not have any pure Nash Equilibrium?", options: ["BOS Game", "Stag Hunt Game", "Prisoner's Dilemma", "Matching Pennies Game"], topic: "Microeconomics", correct: 3 },
+            { id: 94, text: "Which of the followings are true pertaining to the problems of asymmetric information?", options: ["A & B Only", "A, B & C Only", "B, C & D Only", "A, B, D & E Only"], topic: "Microeconomics", correct: 3 },
+            { id: 95, text: "According to Coase theorem, which of the following are possible outcomes of assigning property rights?", options: ["A, B & C Only", "A, B & D Only", "B, C & D Only", "C, D & E Only"], topic: "Public & Env", correct: 1 },
+            { id: 96, text: "The null hypothesis that all slope coefficients are simultaneously equal to zero is tested in logit model by:", options: ["F-test", "t-test", "Chi-square test", "Likelihood ratio statistics"], topic: "Quantitative", correct: 3 },
+            { id: 97, text: "Given U=(x+2)(y+1) and Px=4 and Py=6 and budget (I)=130. Find optimum x and y.", options: ["x=11, y=16", "x=15, y=28", "x=18, y=8", "x=16, y=11"], topic: "Microeconomics", correct: 3 },
+            { id: 98, text: "In the product cycle model of international trade, in which phase does the imitating country start underselling the innovating country in third markets?", options: ["Phase-II", "Phase-III", "Phase-IV", "Phase-V"], topic: "Intl Trade", correct: 2 },
+            { id: 99, text: "The indirect least square is applied to estimate the coefficient of the:", options: ["Structural equation", "Over identified equation", "Reduced form equation", "Under identified equation"], topic: "Quantitative", correct: 2 },
+            { id: 100, text: "If the income effect is in the opposite direction as the substitution effect, but the substitution effect dominates, then the good is:", options: ["Normal", "Inferior but not giffen", "Giffen", "Not enough info"], topic: "Microeconomics", correct: 1 },
+            { id: 101, text: "Evaluate ∫(1 to 2) e^(-2x) dx", options: ["e^-2 - e^-4", "-(1/2)(e^-2 - e^-4)", "(1/2)(e^-2 - e^-4)", "(1/2)(e^-2 + e^-4)"], topic: "Quantitative", correct: 2 },
+            { id: 102, text: "Which of the followings statements correctly describe the concept of efficiency in environmental economics?", options: ["A, B & D Only", "A, B & E Only", "A, C & E Only", "B, C & D Only"], topic: "Public & Env", correct: 3 },
+            { id: 103, text: "Match Distributions with formulas:", options: ["A-II, B-III, C-I, D-IV", "A-III, B-II, C-IV, D-I", "A-I, B-III, C-IV, D-II", "A-II, B-I, C-III, D-IV"], topic: "Quantitative", correct: 1 },
+            { id: 104, text: "Match Env Economics concepts:", options: ["A-IV, B-II, C-III, D-I", "A-III, B-I, C-IV, D-II", "A-III, B-IV, C-I, D-II", "A-III, B-IV, C-II, D-I"], topic: "Public & Env", correct: 2 },
+            { id: 105, text: "Match Chi-square distribution moments with their formulas:", options: ["A-IV, B-III, C-II, D-I", "A-III, B-II, C-IV, D-I", "A-II, B-I, C-IV, D-III", "A-III, B-IV, C-I, D-II"], topic: "Quantitative", correct: 3 },
+            { id: 106, text: "Which of the followings are true about New Classical approach?", options: ["A, B & E Only", "A, D & E Only", "B, C, D & E Only", "A, B & D Only"], topic: "Macroeconomics", correct: 1 },
+            { id: 107, text: "Match Criteria of 15th finance commission with their Weights for horizontal devolution:", options: ["A-III, B-IV, C-I, D-II", "A-II, B-I, C-III, D-IV", "A-III, B-I, C-II, D-IV", "A-I, B-IV, C-II, D-III"], topic: "Indian Economy", correct: 2 },
+            { id: 108, text: "Which of the followings are the effects of increase in government spending in IS-LM framework?", options: ["B, C & D Only", "C, D & E Only", "A, B & C Only", "B, D & E Only"], topic: "Macroeconomics", correct: 2 },
+            { id: 109, text: "Which of the following indicate that country B is capital abundant country?", options: ["A & B Only", "A & C Only", "B & D Only", "C & E Only"], topic: "Intl Trade", correct: 1 },
+            { id: 110, text: "Match BoP theories (Income, Absorption, Trinity, FPE) with authors:", options: ["A-I, B-II, C-III, D-IV", "A-II, B-III, C-IV, D-I", "A-II, B-III, C-I, D-IV", "A-II, B-I, C-III, D-IV"], topic: "Intl Trade", correct: 1 },
+            { id: 111, text: "According to Lucas Critique:", options: ["Drifting coefficients make models reliable", "Keynesian models consider future expectations", "Monetary policy not neutral", "Stability of coefficients important for policy predictions"], topic: "Macroeconomics", correct: 3 },
+            { id: 112, text: "Arrange the union government deficits as percentage of GDP (23-24) in ascending order:", options: ["D, B, A, C, E", "D, A, B, C, E", "D, B, C, E, A", "D, C, B, E, A"], topic: "Indian Economy", correct: 2 },
+            { id: 113, text: "Arrange derivative markets in India in chronological order:", options: ["D, C, E, A, B", "D, E, A, C, B", "D, A, E, B, C", "D, C, E, B, A"], topic: "Indian Economy", correct: 3 },
+            { id: 114, text: "Which of the followings are correct in case of Normal distribution?", options: ["A, C & E Only", "A, B, C & E Only", "B, C & D Only", "A, C & D Only"], topic: "Quantitative", correct: 0 },
+            { id: 115, text: "Which of the following comprises the current account of the balance of payments?", options: ["A & E Only", "C & E Only", "A & C Only", "A & B Only"], topic: "Intl Trade", correct: 2 },
+            { id: 116, text: "Which of the followings are not true pertaining to Wagner's Law of increasing state activities?", options: ["A, B & D Only", "B, C & E Only", "B & C Only", "D & E Only"], topic: "Public & Env", correct: 3 },
+            { id: 117, text: "If U=6x²+y² and 4x-y=1, What is the minimum value of U?", options: ["4/15", "3/11", "3/16", "4/21"], topic: "Quantitative", correct: 1 },
+            { id: 118, text: "Arrange countries in descending order based on their current account balance as a percent of GDP (Q2 FY 25):", options: ["D, A, B, C, E", "B, C, A, D, E", "C, B, A, E, D", "A, C, E, B, D"], topic: "Indian Economy", correct: 3 },
+            { id: 119, text: "Arrange the following crisis in chronological order:", options: ["A, B, C, D, E", "A, B, C, E, D", "A, B, E, C, D", "A, E, B, C, D"], topic: "Macroeconomics", correct: 1 },
+            { id: 120, text: "Arrange tax reform committees starting from the oldest:", options: ["A, E, C, B, D", "E, A, C, B, D", "A, E, D, C, B", "D, E, A, C, B"], topic: "Indian Economy", correct: 2 },
+            { id: 121, text: "In neoclassical growth model, the effects of an increase in population growth rate is/are:", options: ["A, B & C Only", "B, C, D & E Only", "A & C Only", "C, D & E Only"], topic: "Macroeconomics", correct: 2 },
+            { id: 122, text: "Match Elasticities (Income>1, Cross>0, PCC downward, Negative income):", options: ["A-IV, B-II, C-I, D-III", "A-III, B-II, C-I, D-IV", "A-IV, B-II, C-III, D-I", "A-III, B-I, C-IV, D-II"], topic: "Microeconomics", correct: 3 },
+            { id: 123, text: "Candidate selected for 3 posts (3, 4, 2 candidates). Probability selected for at least one?", options: ["3/4", "5/12", "11/12", "1/24"], topic: "Quantitative", correct: 0 },
+            { id: 124, text: "Bootstrapping technique is used to:", options: ["Tests for specification bias", "Obtain the sampling distribution of parameters of interest", "Test for autocorrelation", "Test for normality of error term"], topic: "Quantitative", correct: 1 },
+            { id: 125, text: "By using the uniqueness property of M.G.F., which are correct distribution statements?", options: ["A, B, C & D Only", "B, C & D Only", "B, C, D & E Only", "A, B, C, D & E"], topic: "Quantitative", correct: 1 },
+            { id: 126, text: "Arrange expenditure allocation (budget 2025-26) in descending order:", options: ["E, C, A, D, B", "C, E, A, B, D", "C, A, E, D, B", "A, E, C, B, D"], topic: "Indian Economy", correct: 1 },
+            { id: 127, text: "Which is not correct about Harrod-Domar model?", options: ["Natural rate of growth made of labor force and productivity.", "If g > gw, g can continue to diverge until gn.", "g can be greater than gn in the long-run.", "Full employment require g=gw=gn."], topic: "Macroeconomics", correct: 2 },
+            { id: 128, text: "C=100+0.015X² and R=3X. Find product level X that maximizes profit.", options: ["120", "80", "150", "100"], topic: "Quantitative", correct: 3 },
+            { id: 129, text: "Which of following are not assumptions of policy ineffectiveness propositions?", options: ["B & D Only", "A, C & D Only", "A, B, D & E Only", "C, D & E Only"], topic: "Macroeconomics", correct: 0 },
+            { id: 130, text: "Which correctly states formula for rate of effective protection (g)?", options: ["g = (t-ai*ti)/(1-ai)", "g = (t+ai*ti)/(1-ai)", "g = (t-ai*ti)/(1+ai)", "g = (t+ai*ti)/(1+ai)"], topic: "Intl Trade", correct: 0 },
+            { id: 131, text: "Which of the following causes a positive output gap?", options: ["Population growth", "Technological progress", "Overemployment of factors of production", "Under utilization of resources"], topic: "Macroeconomics", correct: 2 },
+            { id: 132, text: "Which of the followings are true in case of externality?", options: ["A, B, & D Only", "B, D & E Only", "A, B, D & E Only", "B, C, D & E Only"], topic: "Public & Env", correct: 2 },
+            { id: 133, text: "According to Granger and Newbold, rule of thumb for spurious regression:", options: ["High R with low t-value", "High t values with low Durbin-Watson", "High R and low Durbin-Watson d value", "High R and low F value"], topic: "Quantitative", correct: 2 },
+            { id: 134, text: "Match Kaldor's laws with equations:", options: ["A-IV, B-III, C-I, D-II", "A-III, B-IV, C-I, D-II", "A-III, B-I, C-IV, D-II", "A-IV, B-III, C-II, D-I"], topic: "Macroeconomics", correct: 1 },
+            { id: 135, text: "If x is a poisson variate with parameter λ, find P(x+1).", options: ["[λ/(x+1)] P(x)", "(λ/x) P(x)", "[(x+1)/λ] P(x)", "(x/λ) P(x)"], topic: "Quantitative", correct: 0 },
+            { id: 136, text: "Match Integrals with their values:", options: ["A-I, B-II, C-IV, D-III", "A-IV, B-I, C-II, D-III", "A-III, B-I, C-II, D-IV", "A-II, B-III, C-IV, D-I"], topic: "Quantitative", correct: 2 },
+            { id: 137, text: "Arrange expenditure allocation (% total union budget 25-26) in ascending order:", options: ["A, D, E, C, B", "C, D, A, E, B", "E, C, D, A, B", "C, D, E, B, A"], topic: "Indian Economy", correct: 1 },
+            { id: 138, text: "0.95 confidence, error estimate <= 2 min. Standard dev = 16. Sample size?", options: ["96", "300", "255", "246"], topic: "Quantitative", correct: 3 },
+            { id: 139, text: "Match Monetary policy regime with Periods (Fiscal dominance, Multiple indicator, Targeting, FIT):", options: ["A-III, B-IV, C-II, D-I", "A-II, B-III, C-IV, D-I", "A-II, B-I, C-IV, D-III", "A-IV, B-III, C-I, D-II"], topic: "Indian Economy", correct: 1 },
+            { id: 140, text: "Arrange RBI rates in ascending order (54th MPC):", options: ["C, D, A, B, E", "B, C, D, A, E", "D, C, B, E, A", "C, D, E, B, A"], topic: "Indian Economy", correct: 2 },
+            { id: 141, text: "Two fair dice: A: odd 1st, B: odd 2nd, C: sum odd. Find P(A∩B).", options: ["0", "3/4", "7/12", "1/4"], topic: "Quantitative", correct: 3 },
+            { id: 142, text: "Find P(A∩B∩C).", options: ["0", "1/2", "1/4", "1/6"], topic: "Quantitative", correct: 0 },
+            { id: 143, text: "Find P(C).", options: ["1/4", "3/4", "1/2", "5/12"], topic: "Quantitative", correct: 2 },
+            { id: 144, text: "Find P(A∩C).", options: ["0", "1/2", "1/6", "1/4"], topic: "Quantitative", correct: 3 },
+            { id: 145, text: "Find P(B∩C).", options: ["1/4", "1/12", "1/4", "1/36"], topic: "Quantitative", correct: 2 },
+            { id: 146, text: "Based on RBI policy text: VRRR operations indicate:", options: ["Long term capital infusion", "Structural adjustment of fiscal deficit", "Active short term liquidity absorption", "Decrease in SLR"], topic: "Indian Economy", correct: 2 },
+            { id: 147, text: "Based on RBI text, consideration of global interest rate differentials primarily relates to:", options: ["Domestic food inflation", "Foreign portfolio flows and exchange rate management", "Retail credit growth", "Agricultural policy"], topic: "Indian Economy", correct: 1 },
+            { id: 148, text: "Which concept is implicit in RBI's focus on anchoring inflation without immediate rate action?", options: ["Passive targeting", "Expectation management", "Credit rationing", "Monetary expansion"], topic: "Indian Economy", correct: 1 },
+            { id: 149, text: "Which of the following reflects the RBI's strategy in managing transient inflation shocks?", options: ["Immediate rate hike", "Maintaining status quo with calibrated liquidity tools", "Aggressive tightening", "Reducing CRR"], topic: "Indian Economy", correct: 1 },
+            { id: 150, text: "The term withdrawal accommodation in monetary policy implies:", options: ["Increase in CRR", "Active bond purchase", "Gradual normalization of policy stance", "Expansionary fiscal stimulus"], topic: "Indian Economy", correct: 2 }
+        ];
+
+        let topicChartInstance = null;
+
+        function initApp() {
+            setupNavigation();
+            renderDashboard();
+            setupStudyMode();
+        }
+
+        function setupNavigation() {
+            const btnDash = document.getElementById('btn-dashboard');
+            const btnStudy = document.getElementById('btn-study');
+            const viewDash = document.getElementById('view-dashboard');
+            const viewStudy = document.getElementById('view-study');
+
+            btnDash.addEventListener('click', () => {
+                appState.currentView = 'dashboard';
+                btnDash.classList.add('nav-active');
+                btnDash.classList.remove('border-transparent');
+                btnStudy.classList.remove('nav-active');
+                btnStudy.classList.add('border-transparent');
+                
+                viewDash.classList.remove('hidden');
+                viewDash.classList.add('block');
+                viewStudy.classList.remove('block');
+                viewStudy.classList.add('hidden');
+            });
+
+            btnStudy.addEventListener('click', () => {
+                appState.currentView = 'study';
+                btnStudy.classList.add('nav-active');
+                btnStudy.classList.remove('border-transparent');
+                btnDash.classList.remove('nav-active');
+                btnDash.classList.add('border-transparent');
+                
+                viewStudy.classList.remove('hidden');
+                viewStudy.classList.add('block');
+                viewDash.classList.remove('block');
+                viewDash.classList.add('hidden');
+            });
+        }
+
+        function getTopicCounts() {
+            const counts = {};
+            questionData.forEach(q => {
+                counts[q.topic] = (counts[q.topic] || 0) + 1;
+            });
+            return counts;
+        }
+
+        function renderDashboard() {
+            const ctx = document.getElementById('topicChart').getContext('2d');
+            const topicCounts = getTopicCounts();
+
+            let topTopic = "";
+            let maxCount = 0;
+            for (const [topic, count] of Object.entries(topicCounts)) {
+                if (count > maxCount) {
+                    maxCount = count;
+                    topTopic = topic;
+                }
+            }
+            document.getElementById('top-topic').innerText = topTopic;
+
+            if(topicChartInstance) topicChartInstance.destroy();
+
+            // Magical Palette
+            const magicPalette = ['#e5b85c', '#9b51e0', '#56ccf2', '#eb5757', '#6fcf97', '#f2994a'];
+
+            topicChartInstance = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: Object.keys(topicCounts),
+                    datasets: [{
+                        data: Object.values(topicCounts),
+                        backgroundColor: magicPalette,
+                        borderWidth: 2,
+                        borderColor: '#120b1c'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'right',
+                            labels: {
+                                font: { family: "'Quicksand', sans-serif", size: 14, weight: 'bold' },
+                                color: '#eaddcf'
+                            }
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(31, 22, 46, 0.95)',
+                            titleFont: { family: "'Cinzel', serif", size: 15 },
+                            bodyFont: { family: "'Quicksand', sans-serif", size: 14 },
+                            padding: 12,
+                            cornerRadius: 12,
+                            borderColor: '#8b5cf6',
+                            borderWidth: 1,
+                            callbacks: {
+                                label: function(context) {
+                                    return ` ${context.label}: ${context.parsed} Questions`;
+                                }
+                            }
+                        }
+                    },
+                    cutout: '70%',
+                    animation: { animateScale: true }
+                }
+            });
+        }
+
+        function setupStudyMode() {
+            const filterSelect = document.getElementById('category-filter');
+            filterSelect.addEventListener('change', (e) => {
+                appState.currentFilter = e.target.value;
+                renderQuestions();
+            });
+
+            document.getElementById('btn-start-test').addEventListener('click', startPracticeTest);
+            document.getElementById('btn-exit-test').addEventListener('click', exitPracticeTest);
+            document.getElementById('btn-retake-test').addEventListener('click', startPracticeTest);
+
+            renderQuestions();
+        }
+
+        function shuffleArray(array) {
+            const newArr = [...array];
+            for (let i = newArr.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [newArr[i], newArr[j]] = [newArr[j], newArr[i]];
+            }
+            return newArr;
+        }
+
+        function startPracticeTest() {
+            appState.isTestMode = true;
+            appState.testScore = 0;
+            appState.testAnswered = 0;
+            appState.testQuestions = shuffleArray(questionData).slice(0, 10);
+            
+            document.getElementById('filter-container').classList.add('hidden');
+            document.getElementById('btn-start-test').classList.add('hidden');
+            document.getElementById('btn-exit-test').classList.remove('hidden');
+            document.getElementById('score-banner').classList.add('hidden');
+            
+            document.getElementById('test-progress-banner').classList.remove('hidden');
+            document.getElementById('test-progress-banner').classList.add('flex');
+            document.getElementById('answered-count').innerText = '0';
+            
+            renderQuestions();
+        }
+
+        function exitPracticeTest() {
+            appState.isTestMode = false;
+            
+            document.getElementById('filter-container').classList.remove('hidden');
+            document.getElementById('btn-start-test').classList.remove('hidden');
+            document.getElementById('btn-exit-test').classList.add('hidden');
+            document.getElementById('score-banner').classList.add('hidden');
+            
+            document.getElementById('test-progress-banner').classList.add('hidden');
+            document.getElementById('test-progress-banner').classList.remove('flex');
+            
+            renderQuestions();
+        }
+
+        function renderQuestions() {
+            const container = document.getElementById('questions-container');
+            container.innerHTML = '';
+
+            let dataToRender = [];
+            if (appState.isTestMode) {
+                dataToRender = appState.testQuestions;
+            } else {
+                dataToRender = appState.currentFilter === 'All' 
+                    ? questionData 
+                    : questionData.filter(q => q.topic === appState.currentFilter);
+            }
+
+            if (dataToRender.length === 0) {
+                container.innerHTML = `<div class="text-center p-12 text-[#a798ba] border border-[#3e2d56] rounded-2xl bg-[#1c112e]/50">No questions found for this specific filter.</div>`;
+                return;
+            }
+
+            dataToRender.forEach((q, actualIndex) => {
+                const displayIndex = appState.isTestMode ? (actualIndex + 1) : q.id;
+                const card = document.createElement('div');
+                card.className = 'mystic-card overflow-hidden';
+                
+                let optionsHTML = '';
+                const labels = ['A', 'B', 'C', 'D'];
+                q.options.forEach((opt, index) => {
+                    const isCorrect = index === q.correct;
+                    optionsHTML += `
+                        <div class="option-card cursor-pointer flex items-start p-4 mb-3 rounded-2xl" data-correct="${isCorrect}">
+                            <span class="badge-letter flex-shrink-0 w-10 h-10 flex items-center justify-center bg-[#1c112e] border border-[#3e2d56] text-[#eaddcf] font-bold rounded-xl mr-4 transition-colors">
+                                ${labels[index]}
+                            </span>
+                            <span class="text-white mt-1.5 flex-grow font-medium leading-relaxed">${opt}</span>
+                            <span class="feedback-icon ml-3 hidden text-2xl drop-shadow-[0_0_5px_rgba(255,255,255,0.8)]"></span>
+                        </div>
+                    `;
+                });
+
+                // Theme color based on topic
+                const topicColors = {
+                    "Microeconomics": "text-[#56ccf2] border-[#56ccf2]/30 bg-[#56ccf2]/10",
+                    "Macroeconomics": "text-[#f2994a] border-[#f2994a]/30 bg-[#f2994a]/10",
+                    "Indian Economy": "text-[#e5b85c] border-[#e5b85c]/30 bg-[#e5b85c]/10",
+                    "Quantitative": "text-[#eb5757] border-[#eb5757]/30 bg-[#eb5757]/10",
+                    "Public & Env": "text-[#6fcf97] border-[#6fcf97]/30 bg-[#6fcf97]/10",
+                    "Intl Trade": "text-[#9b51e0] border-[#9b51e0]/30 bg-[#9b51e0]/10"
+                };
+                const badgeColor = topicColors[q.topic] || "text-[#a798ba] border-[#a798ba]/30 bg-[#a798ba]/10";
+
+                card.innerHTML = `
+                    <div class="p-8">
+                        <div class="flex justify-between items-center mb-6">
+                            <span class="text-sm font-bold text-[#a798ba] uppercase tracking-widest bg-[#120b1c] px-4 py-1.5 rounded-lg border border-[#3e2d56]">Question ${displayIndex} ${appState.isTestMode ? `(ID: ${q.id})` : ''}</span>
+                            <span class="text-sm font-bold px-4 py-1.5 rounded-xl border ${badgeColor}">${q.topic}</span>
+                        </div>
+                        <h3 class="text-xl font-medium text-white leading-relaxed mb-8 font-['Quicksand']">${q.text}</h3>
+                        
+                        <div class="options-container" data-answered="false">
+                            ${optionsHTML}
+                        </div>
+                    </div>
+                `;
+
+                const optionsContainer = card.querySelector('.options-container');
+                const optionCards = optionsContainer.querySelectorAll('.option-card');
+
+                optionCards.forEach(optCard => {
+                    optCard.addEventListener('click', function() {
+                        if (optionsContainer.dataset.answered === "true") return;
+
+                        optionsContainer.dataset.answered = "true";
+                        const isCorrect = this.dataset.correct === "true";
+
+                        optionCards.forEach(c => {
+                            c.classList.add('dimmed', 'answered');
+                            c.classList.remove('cursor-pointer');
+                        });
+
+                        this.classList.remove('dimmed');
+                        const feedbackIcon = this.querySelector('.feedback-icon');
+                        feedbackIcon.classList.remove('hidden');
+
+                        if (isCorrect) {
+                            this.classList.add('is-correct');
+                            feedbackIcon.innerHTML = '✨';
+                            if (appState.isTestMode) appState.testScore++;
+                        } else {
+                            this.classList.add('is-incorrect');
+                            feedbackIcon.innerHTML = '🔥';
+
+                            // Reveal correct answer
+                            const correctCard = optionsContainer.querySelector('[data-correct="true"]');
+                            correctCard.classList.remove('dimmed');
+                            correctCard.classList.add('is-correct');
+                            const correctFeedback = correctCard.querySelector('.feedback-icon');
+                            correctFeedback.innerHTML = '✨';
+                            correctFeedback.classList.remove('hidden');
+                        }
+
+                        // Test Mode Progression
+                        if (appState.isTestMode) {
+                            appState.testAnswered++;
+                            document.getElementById('answered-count').innerText = appState.testAnswered;
+                            
+                            if (appState.testAnswered === 10) {
+                                document.getElementById('final-score').innerText = appState.testScore;
+                                document.getElementById('score-banner').classList.remove('hidden');
+                                document.getElementById('score-banner').classList.add('flex');
+                                document.getElementById('test-progress-banner').classList.add('hidden');
+                                document.getElementById('test-progress-banner').classList.remove('flex');
+                                window.scrollTo({ top: document.getElementById('view-study').offsetTop - 80, behavior: 'smooth' });
+                            }
+                        }
+                    });
+                });
+
+                container.appendChild(card);
+            });
+        }
+
+        window.addEventListener('DOMContentLoaded', initApp);
+    </script>
+</body>
+</html>
