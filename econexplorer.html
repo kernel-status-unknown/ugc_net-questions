@@ -361,7 +361,9 @@
             isTestMode: false,
             testQuestions: [],
             testScore: 0,
-            testAnswered: 0
+            testAnswered: 0,
+            timeLeft: 900, // 15 minutes in seconds
+            timerInterval: null
         };
 
         // Full 100 Question Dataset
@@ -509,6 +511,42 @@
             });
         }
 
+        function startTimer() {
+            appState.timeLeft = 900;
+            updateTimerDisplay();
+            
+            appState.timerInterval = setInterval(() => {
+                appState.timeLeft--;
+                updateTimerDisplay();
+                
+                if (appState.timeLeft <= 0) {
+                    endTest();
+                }
+            }, 1000);
+        }
+
+        function updateTimerDisplay() {
+            const timerEl = document.getElementById('timer-display');
+            const minutes = Math.floor(appState.timeLeft / 60);
+            const seconds = appState.timeLeft % 60;
+            timerEl.innerText = `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
+            
+            if (appState.timeLeft < 60) {
+                timerEl.classList.add('low-time');
+            } else {
+                timerEl.classList.remove('low-time');
+            }
+        }
+
+        function endTest() {
+            clearInterval(appState.timerInterval);
+            appState.isTestMode = false;
+            document.getElementById('test-header').style.display = 'none';
+            document.getElementById('score-banner').style.display = 'flex';
+            document.getElementById('final-score').innerText = appState.testScore;
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
         function getTopicCounts() {
             const counts = {};
             questionData.forEach(q => {
@@ -617,6 +655,7 @@
             document.getElementById('test-progress-banner').classList.add('flex');
             document.getElementById('answered-count').innerText = '0';
             
+            startTimer();
             renderQuestions();
         }
 
